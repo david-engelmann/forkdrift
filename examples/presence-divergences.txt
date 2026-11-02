@@ -1,0 +1,6 @@
+divergence shard-store purge presence
+  left (examples/presence-a.tape) operation purge = ack
+  right (examples/presence-b.tape) interface shard-store
+divergence shard-store replicas term-value
+  left (examples/presence-a.tape) replicas = 3
+  right (examples/presence-b.tape) replicas = 4
