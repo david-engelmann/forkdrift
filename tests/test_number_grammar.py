@@ -98,10 +98,15 @@ def test_underscored_text_against_other_text_diverges():
     assert found[0].kind == "term-value"
 
 
-def test_an_exponent_beyond_the_arithmetics_range_compares_by_characters():
+def test_an_extreme_exponent_compares_by_worth_not_by_crash():
     found = pair("1e9999999999999999999", "2")
     assert len(found) == 1
     assert found[0].kind == "term-value"
+
+
+def test_two_spellings_of_one_extreme_number_agree():
+    assert pair("1e9999999999999999999", "+1e9999999999999999999") == []
+    assert pair("25e9999999999999999998", "2.5e9999999999999999999") == []
 
 
 def test_an_extreme_exponent_against_its_own_text_agrees():
