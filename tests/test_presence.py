@@ -215,6 +215,25 @@ def run_cli(*args):
     )
 
 
+def test_further_row_is_labelled_for_the_side_it_comes_from():
+    left = parse_artifact(DUAL_LEFT, "a.tape")
+    right = parse_artifact(EMPTY, "b.tape")
+    report = format_report(compare_artifacts(left, right))
+    rows = [line.strip() for line in report.splitlines() if line.strip()]
+    assert rows[-1].startswith("left (a.tape) operation timeout = ack")
+
+
+def test_further_row_label_in_an_exclusion_block_from_the_left():
+    left = parse_artifact(
+        "interface shard-store\n\ndual = 1\noperation dual = run\n", "a.tape"
+    )
+    right = parse_artifact("interface shard-store\n\nexcludes dual\n", "b.tape")
+    report = format_report(compare_artifacts(left, right))
+    rows = [line.strip() for line in report.splitlines() if line.strip()]
+    assert "excluded-but-defined" in rows[0]
+    assert rows[-1].startswith("left (a.tape) operation dual = run")
+
+
 def test_cli_pair_with_only_a_presence_divergence_exits_1(tmp_path):
     left = tmp_path / "a.tape"
     left.write_text(TERM_LEFT)

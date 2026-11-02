@@ -163,7 +163,8 @@ def format_report(divergences):
             f"  right ({d.right_source}) {d.right_line}"
         )
         if d.extra_line is not None:
-            block += f"\n  right ({d.extra_source}) {d.extra_line}"
+            extra_side = "left" if d.extra_source == d.left_source else "right"
+            block += f"\n  {extra_side} ({d.extra_source}) {d.extra_line}"
         blocks.append(block)
     if not blocks:
         return ""
