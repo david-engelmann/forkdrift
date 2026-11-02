@@ -96,3 +96,36 @@ def test_underscored_text_against_other_text_diverges():
     found = pair("node_1", "node_2")
     assert len(found) == 1
     assert found[0].kind == "term-value"
+
+
+def test_an_exponent_beyond_the_arithmetics_range_compares_by_characters():
+    found = pair("1e9999999999999999999", "2")
+    assert len(found) == 1
+    assert found[0].kind == "term-value"
+
+
+def test_an_extreme_exponent_against_its_own_text_agrees():
+    assert pair("1e9999999999999999999", "1e9999999999999999999") == []
+
+
+def test_a_digit_from_another_script_is_text_not_a_number():
+    found = pair("٣", "3")
+    assert len(found) == 1
+    assert found[0].kind == "term-value"
+    assert pair("٣", "٣") == []
+
+
+def test_trailing_point_with_exponent_agrees_with_plain_integer():
+    assert pair("5.e3", "5000") == []
+
+
+def test_standing_fraction_with_exponent_agrees_with_plain_integer():
+    assert pair(".5e2", "50") == []
+
+
+def test_capital_exponent_marker_agrees_with_plain_integer():
+    assert pair("1E3", "1000") == []
+
+
+def test_exponent_with_leading_zeros_agrees_with_plain_integer():
+    assert pair("1e007", "10000000") == []

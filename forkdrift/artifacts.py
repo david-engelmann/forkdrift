@@ -6,7 +6,7 @@ interface, written in the line based format CONTRACT.md defines.
 
 import re
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from .errors import ArtifactError
 
@@ -44,14 +44,19 @@ def values_equal(left, right):
 
     Only values matching the FD-19 number grammar compare by exact
     decimal worth. Anything else compares by its characters, which
-    the equality check above has already settled.
+    the equality check above has already settled. A grammar matching
+    value whose exponent the exact arithmetic cannot hold falls back
+    to the same character comparison, as FD-19 states.
     """
     if left == right:
         return True
     if not (NUMBER.fullmatch(left) and NUMBER.fullmatch(right)):
         return False
-    left_number = Decimal(left)
-    right_number = Decimal(right)
+    try:
+        left_number = Decimal(left)
+        right_number = Decimal(right)
+    except InvalidOperation:
+        return left == right
     if not (left_number.is_finite() and right_number.is_finite()):
         return False
     return left_number == right_number
