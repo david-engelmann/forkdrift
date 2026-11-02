@@ -8,7 +8,7 @@ Parallel drift is the failure class unique to swarms and invisible to every per-
 
 ## Status
 
-Round 2 landed in PR 4 and is recorded closed here. The comparison also reports presence divergence under contract obligations FD-1 to FD-18, retiring the FD-8 limit so a term or an operation only one artifact defines now raises an alarm beside the term value, result type, and exclusion contradiction classes, with purely textual differences still raising no alarm. Closed rounds 2 of 100. Part of the impatient programming portfolio, in the Fleet Operations arc.
+Round 3 is built and in review. The grammar of a number stands stated under contract obligations FD-1 to FD-19, so a value compares by exact decimal worth only when it matches the grammar of this format, and a value written with digit underscores compares as text where it once read as a number. Closed rounds 2 of 100. Part of the impatient programming portfolio, in the Fleet Operations arc.
 
 ## Licence
 

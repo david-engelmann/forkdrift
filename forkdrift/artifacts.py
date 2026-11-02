@@ -6,11 +6,13 @@ interface, written in the line based format CONTRACT.md defines.
 
 import re
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 from .errors import ArtifactError
 
 IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_.\-]*")
+
+NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
 
 
 @dataclass(frozen=True)
@@ -38,14 +40,18 @@ def normalize_value(value):
 
 
 def values_equal(left, right):
-    """Compare two normalized values under the FD-6 normalizations."""
+    """Compare two normalized values under the FD-6 normalizations.
+
+    Only values matching the FD-19 number grammar compare by exact
+    decimal worth. Anything else compares by its characters, which
+    the equality check above has already settled.
+    """
     if left == right:
         return True
-    try:
-        left_number = Decimal(left)
-        right_number = Decimal(right)
-    except InvalidOperation:
+    if not (NUMBER.fullmatch(left) and NUMBER.fullmatch(right)):
         return False
+    left_number = Decimal(left)
+    right_number = Decimal(right)
     if not (left_number.is_finite() and right_number.is_finite()):
         return False
     return left_number == right_number
