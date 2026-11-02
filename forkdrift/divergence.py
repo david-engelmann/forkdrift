@@ -153,6 +153,33 @@ def _exclusion_divergences(excluding, defining, excluding_is_left):
     return out
 
 
+def sweep_artifacts(baseline, others):
+    """Return one divergence list per other artifact, in the order given.
+
+    Every comparison is the pairwise comparison of compare_artifacts,
+    and a refusal in any pair propagates, so no partial result stands
+    in for a sweep one of whose pairs could not be compared.
+    """
+    return [compare_artifacts(baseline, other) for other in others]
+
+
+def format_sweep(baseline, others, sweep):
+    """Render a sweep as one attributed document.
+
+    Every pair contributes one header line built from its two source
+    names, then its pairwise report, which is empty when the pair
+    agrees, so an agreeing pair contributes its header line alone
+    and attribution never depends on a report being non-empty.
+    """
+    parts = []
+    for other, divergences in zip(others, sweep):
+        parts.append(
+            f"pair left ({baseline.source}) right ({other.source})\n"
+        )
+        parts.append(format_report(divergences))
+    return "".join(parts)
+
+
 def format_report(divergences):
     """Render divergences as the deterministic report text."""
     blocks = []

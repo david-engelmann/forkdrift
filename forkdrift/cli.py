@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from .artifacts import parse_artifact
-from .divergence import compare_artifacts, format_report
+from .divergence import compare_artifacts, format_report, format_sweep
 from .errors import ForkdriftError
 
 
@@ -28,6 +28,12 @@ def main(argv=None):
     )
     compare_parser.add_argument("left")
     compare_parser.add_argument("right")
+    sweep_parser = sub.add_parser(
+        "sweep",
+        help="Compare one baseline artifact against several others.",
+    )
+    sweep_parser.add_argument("baseline")
+    sweep_parser.add_argument("others", nargs="+")
     args = parser.parse_args(argv)
     if args.command == "compare":
         try:
@@ -44,4 +50,23 @@ def main(argv=None):
             return 2
         sys.stdout.write(format_report(divergences))
         return 1 if divergences else 0
+    if args.command == "sweep":
+        try:
+            baseline = parse_artifact(_read(args.baseline), args.baseline)
+            others = []
+            sweep = []
+            for path in args.others:
+                other = parse_artifact(_read(path), path)
+                sweep.append(compare_artifacts(baseline, other))
+                others.append(other)
+        except ForkdriftError as exc:
+            sys.stderr.write(f"error: {exc}\n")
+            return 2
+        except OSError as exc:
+            sys.stderr.write(
+                f"error: cannot read {exc.filename}, {exc.strerror}\n"
+            )
+            return 2
+        sys.stdout.write(format_sweep(baseline, others, sweep))
+        return 1 if any(sweep) else 0
     return 2
