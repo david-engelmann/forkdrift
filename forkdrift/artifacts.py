@@ -6,11 +6,12 @@ interface, written in the line based format CONTRACT.md defines.
 
 import re
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
 
 from .errors import ArtifactError
 
 IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_.\-]*")
+
+NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
 
 
 @dataclass(frozen=True)
@@ -37,18 +38,45 @@ def normalize_value(value):
     return " ".join(value.split())
 
 
+def _worth_key(text):
+    """The exact worth of a grammar matching number as a comparable key.
+
+    The key is built from the number's own digits and exponent, so
+    worth comparison is exact at any exponent the grammar admits,
+    with no fixed range arithmetic in between. Zero carries no sign
+    and no exponent, so every spelling of zero shares one key.
+    """
+    sign = -1 if text.startswith("-") else 1
+    body = text.lstrip("+-")
+    exponent = 0
+    for marker in ("e", "E"):
+        if marker in body:
+            body, _, exponent_text = body.partition(marker)
+            exponent = int(exponent_text)
+            break
+    integer, _, fraction = body.partition(".")
+    digits = integer + fraction
+    exponent -= len(fraction)
+    digits = digits.lstrip("0")
+    if not digits:
+        return (0,)
+    trimmed = digits.rstrip("0")
+    exponent += len(digits) - len(trimmed)
+    return (1, sign, trimmed, exponent)
+
+
 def values_equal(left, right):
-    """Compare two normalized values under the FD-6 normalizations."""
+    """Compare two normalized values under the FD-6 normalizations.
+
+    Only values matching the FD-19 number grammar compare by exact
+    decimal worth. Anything else compares by its characters, which
+    the equality check above has already settled.
+    """
     if left == right:
         return True
-    try:
-        left_number = Decimal(left)
-        right_number = Decimal(right)
-    except InvalidOperation:
+    if not (NUMBER.fullmatch(left) and NUMBER.fullmatch(right)):
         return False
-    if not (left_number.is_finite() and right_number.is_finite()):
-        return False
-    return left_number == right_number
+    return _worth_key(left) == _worth_key(right)
 
 
 def parse_artifact(text, source):
