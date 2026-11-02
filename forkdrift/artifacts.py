@@ -24,6 +24,7 @@ class Statement:
 class Artifact:
     source: str
     interface: str
+    interface_line: str
     terms: dict
     operations: dict
     labels: dict
@@ -109,6 +110,7 @@ def parse_artifact(text, source):
     return Artifact(
         source=source,
         interface=interface,
+        interface_line=first,
         terms=terms,
         operations=operations,
         labels=labels,

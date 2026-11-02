@@ -8,6 +8,7 @@ from .errors import InterfaceMismatchError
 TERM_VALUE = "term-value"
 RESULT_TYPE = "result-type"
 EXCLUDED_BUT_DEFINED = "excluded-but-defined"
+PRESENCE = "presence"
 
 
 @dataclass(frozen=True)
@@ -46,8 +47,77 @@ def compare_artifacts(left, right):
                 )
     found.extend(_exclusion_divergences(left, right, excluding_is_left=True))
     found.extend(_exclusion_divergences(right, left, excluding_is_left=False))
+    found.extend(_presence_divergences(left, right))
     found.sort(key=lambda d: (d.interface, d.name, d.kind))
     return found
+
+
+def _presence_divergences(left, right):
+    """One divergence per name with a statement only one artifact makes.
+
+    A name either artifact excludes is never a presence case, because
+    FD-16 gives that name to the exclusion contradiction alone. Label
+    lines never take part, because FD-7 declares them non-semantic.
+    """
+    names = (
+        set(left.terms) | set(left.operations)
+        | set(right.terms) | set(right.operations)
+    )
+    out = []
+    for name in sorted(names):
+        if name in left.excludes or name in right.excludes:
+            continue
+        left_lines = _one_sided_lines(left, right, name)
+        right_lines = _one_sided_lines(right, left, name)
+        if not left_lines and not right_lines:
+            continue
+        out.append(
+            _presence_divergence(left, right, name, left_lines, right_lines)
+        )
+    return out
+
+
+def _one_sided_lines(defining, other, name):
+    """The lines with which defining states a name other does not state.
+
+    The lines come term first and operation second, the order FD-12
+    takes defining lines in.
+    """
+    lines = []
+    for own, foreign in (
+        (defining.terms, other.terms),
+        (defining.operations, other.operations),
+    ):
+        if name in own and name not in foreign:
+            lines.append(own[name].line)
+    return lines
+
+
+def _presence_divergence(left, right, name, left_lines, right_lines):
+    """Build the one presence divergence for a name.
+
+    A side with one-sided lines quotes the first in its side row and
+    the second as the extra line, and a side with none quotes its
+    interface line, so every row quotes a line its source states.
+    When both sides hold one-sided lines each holds exactly one, a
+    term on one side and an operation on the other, and each side
+    quotes its own defining line.
+    """
+    if left_lines and right_lines:
+        return Divergence(left.interface, name, PRESENCE,
+                          left.source, left_lines[0],
+                          right.source, right_lines[0])
+    if left_lines:
+        return Divergence(left.interface, name, PRESENCE,
+                          left.source, left_lines[0],
+                          right.source, right.interface_line,
+                          left.source if len(left_lines) > 1 else None,
+                          left_lines[1] if len(left_lines) > 1 else None)
+    return Divergence(left.interface, name, PRESENCE,
+                      left.source, left.interface_line,
+                      right.source, right_lines[0],
+                      right.source if len(right_lines) > 1 else None,
+                      right_lines[1] if len(right_lines) > 1 else None)
 
 def _exclusion_divergences(excluding, defining, excluding_is_left):
     """One divergence per name the excluding side forbids and the other defines.
