@@ -4,6 +4,13 @@ import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CANONICAL_PREFIX_SHA256 = "63d2f04005dc8eb111d3efca1be55c0911f9ad46bc7cf3c74d9f9908f4a86f11"
+EXPECTED_OBLIGATIONS = [
+    'FD-S1. Two runs that define the same interface in incompatible ways raise an alarm, and an alarm that does not quote both conflicting definitions is a defect the tests must catch.',
+    'FD-S2. Two runs whose definitions of a shared interface agree raise no alarm, and a false alarm on agreeing runs is a defect the tests must catch.',
+    'FD-S3. Every alarm names the concept that diverged and the runs that diverged on it, and an alarm missing either is rejected rather than reported incomplete.',
+    'FD-S4. Forkdrift detects and reports only, and it never edits a run, a branch, or a definition in order to reconcile a divergence it found.',
+    'FD-S5. Every fixture and example in this repo is synthetic and built for this repo, and no real trace or session data appears anywhere in the tree.',
+]
 EXPECTED_PREFIX = "FD"
 TEXT_SUFFIXES = {".md", ".yml", ".yaml", ".py", ".toml", ".txt"}
 
@@ -17,6 +24,8 @@ def test_contract_stub_obligations_exist():
             found.append((m.group(1), ln))
     assert len(found) >= 5, f"expected at least 5 stub obligations, found {len(found)}"
     numbers = sorted(int(re.search(r"-S(\d)\.", ln).group(1)) for _, ln in found)
+    texts = [ln for _, ln in found]
+    assert texts == EXPECTED_OBLIGATIONS, "stub obligation text has changed without a contract amendment"
     assert numbers == [1, 2, 3, 4, 5], f"stub obligations must be exactly S1 to S5, found {numbers}"
     for prefix, ln in found:
         assert prefix == EXPECTED_PREFIX, f"obligation {ln[:12]} is not a {EXPECTED_PREFIX} obligation"
@@ -44,7 +53,7 @@ def test_no_em_or_en_dash_in_text_files():
     for p in ROOT.rglob("*"):
         if not p.is_file() or p.suffix not in TEXT_SUFFIXES:
             continue
-        if any(part in {".git", ".pytest_cache", "__pycache__"} for part in p.relative_to(ROOT).parts):
+        if any(part in {".git", ".pytest_cache", "__pycache__", ".venv", "venv", "node_modules", ".tox", "dist", "build"} for part in p.relative_to(ROOT).parts):
             continue
         t = p.read_text()
         if "\u2014" in t or "\u2013" in t:
