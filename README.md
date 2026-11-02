@@ -8,7 +8,7 @@ Parallel drift is the failure class unique to swarms and invisible to every per-
 
 ## Status
 
-Round 3 is built and in review. The grammar of a number stands stated under contract obligations FD-1 to FD-19, so a value compares by exact decimal worth only when it matches the grammar of this format, and a value written with digit underscores compares as text where it once read as a number. Closed rounds 2 of 100. Part of the impatient programming portfolio, in the Fleet Operations arc.
+Round 3 landed in PR 7 and is recorded closed here. The grammar of a number stands stated under contract obligations FD-1 to FD-19, so a value compares by exact decimal worth only when it matches the grammar of this format, and a value written with digit underscores compares as text where it once read as a number. Closed rounds 3 of 100. Part of the impatient programming portfolio, in the Fleet Operations arc.
 
 ## Licence
 
