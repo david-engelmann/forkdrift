@@ -1,0 +1,6 @@
+divergence shard-store store result-type
+  left (examples/run-a.tape) operation store = ack
+  right (examples/run-b.tape) operation store = receipt
+divergence shard-store timeout term-value
+  left (examples/run-a.tape) timeout = 30
+  right (examples/run-b.tape) timeout = 45

@@ -59,3 +59,5 @@ This repo is forkdrift. Its contract lives in CONTRACT.md and that file is the s
 Boundary. Forkdrift detects semantic divergence across the whole fleet. Crosscurrent, also owned by this chat, reconciles the pairs forkdrift catches, and forkdrift never performs a reconciliation itself.
 
 First slice. A reader over recorded run tapes or plain diffs from two concurrent runs that detects one divergence class, two incompatible contracts for one interface, and raises the alarm with both definitions quoted.
+
+Identity exception. The maintainer identity in the required Signed-off-by trailer is the repo owner's public sign-off identity. It is permitted in commit metadata and in that instruction, and the sanitization rule does not apply to it.

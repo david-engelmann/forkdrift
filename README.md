@@ -8,7 +8,7 @@ Parallel drift is the failure class unique to swarms and invisible to every per-
 
 ## Status
 
-Setup slice in progress. The build has not started. Closed rounds 0 of 100. The contract is a stub and is not yet met. Part of the impatient programming portfolio, in the Fleet Operations arc.
+Round 1 is built and in review. The reader and the comparison over recorded artifacts are in place under contract obligations FD-1 to FD-11, covering term value divergence, result type divergence, and exclusion contradiction, with purely textual differences raising no alarm. Closed rounds 0 of 100. Part of the impatient programming portfolio, in the Fleet Operations arc.
 
 ## Licence
 
