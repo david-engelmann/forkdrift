@@ -94,7 +94,7 @@ def test_name_defined_both_ways_on_one_side_raises_one_presence_block():
         "divergence shard-store timeout presence\n"
         "  left (run-a) timeout = 30\n"
         "  right (run-b) interface shard-store\n"
-        "  right (run-a) operation timeout = ack\n"
+        "  left (run-a) operation timeout = ack\n"
     )
 
 
