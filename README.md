@@ -8,7 +8,7 @@ Parallel drift is the failure class unique to swarms and invisible to every per-
 
 ## Status
 
-Round 4 is built and in review. The sweep stands stated under contract obligations FD-1 to FD-23, so one baseline artifact compares against each of several others in turn, every comparison exactly the pairwise comparison, and the sweep document attributes every divergence to the pair that raised it. Round 3 landed in PR 7 and is recorded closed here. The grammar of a number stands stated under contract obligations FD-1 to FD-19, so a value compares by exact decimal worth only when it matches the grammar of this format, and a value written with digit underscores compares as text where it once read as a number. Closed rounds 3 of 100. Part of the impatient programming portfolio, in the Fleet Operations arc.
+Round 4 landed in PR 9 and is recorded closed here. The sweep stands stated under contract obligations FD-1 to FD-23, so one baseline artifact compares against each of several others in turn, every comparison exactly the pairwise comparison, and the sweep document attributes every divergence to the pair that raised it. Round 3 landed in PR 7 and is recorded closed here. The grammar of a number stands stated under contract obligations FD-1 to FD-19, so a value compares by exact decimal worth only when it matches the grammar of this format, and a value written with digit underscores compares as text where it once read as a number. Closed rounds 4 of 100. Part of the impatient programming portfolio, in the Fleet Operations arc.
 
 ## Licence
 
