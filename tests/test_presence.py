@@ -227,7 +227,7 @@ def test_further_row_label_in_an_exclusion_block_from_the_left():
     left = parse_artifact(
         "interface shard-store\n\ndual = 1\noperation dual = run\n", "a.tape"
     )
-    right = parse_artifact("interface shard-store\n\nexcludes dual\n", "b.tape")
+    right = parse_artifact("interface shard-store\n\nexcludes = dual\n", "b.tape")
     report = format_report(compare_artifacts(left, right))
     rows = [line.strip() for line in report.splitlines() if line.strip()]
     assert "excluded-but-defined" in rows[0]
