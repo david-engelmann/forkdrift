@@ -9,7 +9,7 @@
 //! its pair (FD-20 to FD-23). Forkdrift detects divergence
 //! and nothing here reconciles it.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::artifacts::{Artifact, Statement, WorthError, escape_source, values_equal};
 use crate::errors::{ForkdriftError, InterfaceMismatchError};
@@ -127,6 +127,10 @@ fn exclusion_divergences(
 }
 
 fn presence_divergences(left: &Artifact, right: &Artifact, found: &mut Vec<Divergence>) {
+    // The names collect once each in the order they first
+    // stand, with a set carrying the membership question so
+    // a wide artifact costs a pass and not a square.
+    let mut seen: HashSet<&str> = HashSet::new();
     let mut names: Vec<&str> = Vec::new();
     for name in left
         .terms
@@ -135,7 +139,7 @@ fn presence_divergences(left: &Artifact, right: &Artifact, found: &mut Vec<Diver
         .chain(right.terms.keys())
         .chain(right.operations.keys())
     {
-        if !names.contains(&name.as_str()) {
+        if seen.insert(name.as_str()) {
             names.push(name.as_str());
         }
     }

@@ -4,11 +4,18 @@
 //! status 120 from the exit flush, and under a document of
 //! 8192 bytes or more it answers at status 1 from inside
 //! the write. These pins run the binary against a pipe
-//! whose reading end is already closed.
+//! whose reading end is already closed. The error stream
+//! family stands beside them under the probe correction to
+//! FD-30, because a line that cannot be written to the
+//! error stream rides the same exit flush shape in the
+//! oracle and answers 120 there too.
 
 mod common;
 
-use common::{run_cli, run_cli_on_closed_stdout, temp_dir, write};
+use common::{
+    run_cli, run_cli_on_closed_stderr, run_cli_on_closed_stdout, run_cli_on_closed_streams,
+    temp_dir, write,
+};
 
 fn diverging_pair(dir: &std::path::Path, terms: usize) -> (String, String) {
     let mut left = String::from("interface shard-store\n\n");
@@ -69,6 +76,80 @@ fn help_to_a_dead_output_answers_120() {
         result.stderr,
         b"error: forkdrift could not print its report\n".to_vec()
     );
+}
+
+#[test]
+fn refusal_to_a_dead_error_stream_answers_120() {
+    let dir = temp_dir("pipe-refusal-dead-err");
+    let bad = write(
+        &dir,
+        "bad.tape",
+        "interface shard-store\n\nreplicas three\n",
+    );
+    let good = write(&dir, "good.tape", "interface shard-store\n\nreplicas = 3\n");
+    let control = run_cli(&["compare", &bad, &good], &dir);
+    assert_eq!(control.code, 2);
+    assert_eq!(
+        control.stderr,
+        format!("error: {bad} is malformed, line 3 matches no statement form, replicas three\n")
+            .into_bytes()
+    );
+    let result = run_cli_on_closed_stderr(&["compare", &bad, &good], &dir);
+    assert_eq!(result.code, 120);
+    assert_eq!(result.stdout, Vec::<u8>::new());
+    let missing = dir.join("missing.tape").to_string_lossy().into_owned();
+    let control = run_cli(&["compare", &missing, &good], &dir);
+    assert_eq!(control.code, 2);
+    assert_eq!(
+        control.stderr,
+        format!("error: cannot read {missing}, No such file or directory\n").into_bytes()
+    );
+    let result = run_cli_on_closed_stderr(&["compare", &missing, &good], &dir);
+    assert_eq!(result.code, 120);
+}
+
+#[test]
+fn usage_error_to_a_dead_error_stream_answers_120() {
+    let dir = temp_dir("pipe-usage-dead-err");
+    let good = write(&dir, "good.tape", "interface shard-store\n\nreplicas = 3\n");
+    let control = run_cli(&["compare", &good], &dir);
+    assert_eq!(control.code, 2);
+    assert_eq!(
+        control.stderr,
+        b"error: the following required arguments were not provided:\n  <RIGHT>\n\nUsage: forkdrift compare <LEFT> <RIGHT>\n\nFor more information, try '--help'.\n"
+            .to_vec()
+    );
+    let result = run_cli_on_closed_stderr(&["compare", &good], &dir);
+    assert_eq!(result.code, 120);
+    assert_eq!(result.stdout, Vec::<u8>::new());
+}
+
+#[test]
+fn small_report_with_both_streams_dead_answers_120() {
+    let dir = temp_dir("pipe-report-both-dead");
+    let (left, right) = diverging_pair(&dir, 10);
+    let result = run_cli_on_closed_streams(&["compare", &left, &right], &dir);
+    assert_eq!(result.code, 120);
+}
+
+#[test]
+fn refusal_with_both_streams_dead_answers_120() {
+    let dir = temp_dir("pipe-refusal-both-dead");
+    let bad = write(
+        &dir,
+        "bad.tape",
+        "interface shard-store\n\nreplicas three\n",
+    );
+    let good = write(&dir, "good.tape", "interface shard-store\n\nreplicas = 3\n");
+    let result = run_cli_on_closed_streams(&["compare", &bad, &good], &dir);
+    assert_eq!(result.code, 120);
+}
+
+#[test]
+fn help_with_both_streams_dead_answers_120() {
+    let dir = temp_dir("pipe-help-both-dead");
+    let result = run_cli_on_closed_streams(&["--help"], &dir);
+    assert_eq!(result.code, 120);
 }
 
 #[test]

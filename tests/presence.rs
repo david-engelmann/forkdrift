@@ -220,6 +220,28 @@ fn further_row_label_in_an_exclusion_block_from_the_left() {
 }
 
 #[test]
+fn presence_over_a_large_artifact_counts_every_one_sided_name() {
+    // The name collection behind the presence pass is set
+    // backed, so a wide artifact costs a pass and not a
+    // square. This pin holds the count exact at a size
+    // where the square would dominate the suite, and the
+    // report order stays the FD-10 order at that size.
+    let mut left_text = String::from("interface shard-store\n\nshared = 1\n");
+    let mut right_text = String::from("interface shard-store\n\nshared = 1\n");
+    for index in 0..4000 {
+        left_text.push_str(&format!("left-term-{index:05} = {index}\n"));
+        right_text.push_str(&format!("right-term-{index:05} = {index}\n"));
+    }
+    let left = artifact(&left_text, "run-a");
+    let right = artifact(&right_text, "run-b");
+    let found = compare(&left, &right);
+    assert_eq!(found.len(), 8000);
+    assert!(found.iter().all(|d| d.kind == "presence"));
+    assert_eq!(found.first().expect("first stands").name, "left-term-00000");
+    assert_eq!(found.last().expect("last stands").name, "right-term-03999");
+}
+
+#[test]
 fn cli_pair_with_only_a_presence_divergence_exits_1() {
     let dir = temp_dir("presence-cli");
     let left = write(&dir, "a.tape", TERM_LEFT);

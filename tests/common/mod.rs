@@ -50,6 +50,15 @@ pub fn temp_dir(tag: &str) -> PathBuf {
         tag,
         number
     ));
+    // The name rests on the process id and a counter that
+    // starts again in every process, so a directory a dead
+    // process left behind can stand where a later process
+    // with a recycled id asks for the same name. Clear any
+    // such leftover before reuse, so no test inherits files
+    // it did not write.
+    if dir.exists() {
+        std::fs::remove_dir_all(&dir).expect("stale temp dir cleared");
+    }
     std::fs::create_dir_all(&dir).expect("temp dir created");
     dir
 }
@@ -129,6 +138,51 @@ pub fn run_cli_on_closed_stdout(args: &[&str], cwd: &std::path::Path) -> CliOutp
         code: output.status.code().unwrap_or(-1),
         stdout: Vec::new(),
         stderr: output.stderr,
+    }
+}
+
+/// Run the binary with its error stream standing on a pipe
+/// no one reads, so every line it writes there meets a dead
+/// stream, and return its exit code and standard output.
+/// The reading end is dropped before the binary starts, so
+/// the pipe is dead from the first byte and never raced.
+pub fn run_cli_on_closed_stderr(args: &[&str], cwd: &std::path::Path) -> CliOutput {
+    let (reader, writer) = std::io::pipe().expect("pipe stands");
+    drop(reader);
+    let output = Command::new(env!("CARGO_BIN_EXE_forkdrift"))
+        .args(args)
+        .current_dir(cwd)
+        .stdout(std::process::Stdio::piped())
+        .stderr(writer)
+        .output()
+        .expect("binary runs");
+    CliOutput {
+        code: output.status.code().unwrap_or(-1),
+        stdout: output.stdout,
+        stderr: Vec::new(),
+    }
+}
+
+/// Run the binary with both streams standing on pipes no
+/// one reads, so nothing it writes anywhere can land, and
+/// return its exit code alone, the only observable a dead
+/// pair of streams leaves.
+pub fn run_cli_on_closed_streams(args: &[&str], cwd: &std::path::Path) -> CliOutput {
+    let (out_reader, out_writer) = std::io::pipe().expect("pipe stands");
+    drop(out_reader);
+    let (err_reader, err_writer) = std::io::pipe().expect("pipe stands");
+    drop(err_reader);
+    let status = Command::new(env!("CARGO_BIN_EXE_forkdrift"))
+        .args(args)
+        .current_dir(cwd)
+        .stdout(out_writer)
+        .stderr(err_writer)
+        .status()
+        .expect("binary runs");
+    CliOutput {
+        code: status.code().unwrap_or(-1),
+        stdout: Vec::new(),
+        stderr: Vec::new(),
     }
 }
 

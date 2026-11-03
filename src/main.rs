@@ -583,11 +583,37 @@ fn preprocess(tokens: &[OsString]) -> Preprocess {
     Preprocess::Run(out)
 }
 
+/// Write text to the error stream in one plain write and
+/// answer with the status the text carries.
+///
+/// The write is handled and never panicking, because a
+/// panicking write answers with the panic status, which is
+/// neither the status the text carries nor the status a
+/// failed write answers with. When the write lands, the
+/// status the caller passes stands. When it cannot land,
+/// the answer is status 120, the exit flush shape the probe
+/// correction to FD-30 records for the oracle's own lines
+/// on a dead error stream. Every line the tool writes to
+/// its error stream goes through this write.
+fn answer_error_line(text: &str, status: u8) -> ExitCode {
+    let stderr = std::io::stderr();
+    let mut lock = stderr.lock();
+    match lock.write_all(text.as_bytes()) {
+        Ok(()) => ExitCode::from(status),
+        Err(_) => ExitCode::from(120),
+    }
+}
+
 /// Answer a clap error the way the command line answers it.
 ///
 /// An error clap prints to standard error, a malformed
 /// invocation, is printed there and answered with its own
-/// exit code. An error clap prints to standard output is
+/// exit code, and it goes through the same handled error
+/// stream write as the tool's own lines, so an error stream
+/// that cannot take the text answers with status 120 under
+/// the probe correction to FD-30, where the parser's own
+/// print would have kept the code over a write that never
+/// landed. An error clap prints to standard output is
 /// the help text, and help output takes the failed write
 /// discipline of every document the tool prints, because
 /// the Python tool's help goes to the same buffered
@@ -601,16 +627,13 @@ fn preprocess(tokens: &[OsString]) -> Preprocess {
 fn answer_clap_error(error: clap::Error) -> ExitCode {
     if error.use_stderr() {
         let code = error.exit_code();
-        let _ = error.print();
-        return ExitCode::from(code as u8);
+        let text = error.render().to_string();
+        return answer_error_line(&text, code as u8);
     }
     let text = error.render().to_string();
     match print_out(text.as_bytes()) {
         Ok(()) => ExitCode::from(error.exit_code() as u8),
-        Err(failure) => {
-            eprintln!("error: {}", failure);
-            ExitCode::from(refusal_status(&failure))
-        }
+        Err(failure) => answer_error_line(&format!("error: {failure}\n"), refusal_status(&failure)),
     }
 }
 
@@ -642,9 +665,6 @@ fn main() -> ExitCode {
     };
     match outcome {
         Ok(code) => ExitCode::from(code as u8),
-        Err(error) => {
-            eprintln!("error: {}", error);
-            ExitCode::from(refusal_status(&error))
-        }
+        Err(error) => answer_error_line(&format!("error: {error}\n"), refusal_status(&error)),
     }
 }
