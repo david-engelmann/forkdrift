@@ -109,7 +109,11 @@ fn readme_status_reports_rounds() {
 /// only the tests build against. A section whose name ends
 /// in dev-dependencies feeds the second set and any other
 /// section whose name ends in dependencies feeds the first,
-/// so a target specific dependency section counts too.
+/// so a target specific dependency section counts too. A
+/// dependency may also stand as a table of its own, under
+/// a header naming the dependency after the dependencies
+/// segment; the header itself then carries the name and
+/// the table's own keys carry none.
 fn manifest_dependency_sets(text: &str) -> (BTreeSet<String>, BTreeSet<String>) {
     let mut shipped = BTreeSet::new();
     let mut tests_only = BTreeSet::new();
@@ -118,6 +122,24 @@ fn manifest_dependency_sets(text: &str) -> (BTreeSet<String>, BTreeSet<String>) 
         let line = raw.trim();
         if line.starts_with('[') {
             section = line.trim_start_matches('[').trim_end_matches(']').trim();
+            let segments: Vec<&str> = section.split('.').map(|part| part.trim()).collect();
+            for (index, segment) in segments.iter().enumerate() {
+                let dotted = if *segment == "dev-dependencies" {
+                    Some(&mut tests_only)
+                } else if *segment == "dependencies" {
+                    Some(&mut shipped)
+                } else {
+                    None
+                };
+                if let Some(target) = dotted {
+                    if let Some(name) = segments.get(index + 1) {
+                        let name = name.trim_matches('"');
+                        if !name.is_empty() {
+                            target.insert(name.to_string());
+                        }
+                    }
+                }
+            }
             continue;
         }
         if line.is_empty() || line.starts_with('#') {
@@ -137,6 +159,22 @@ fn manifest_dependency_sets(text: &str) -> (BTreeSet<String>, BTreeSet<String>) 
         }
     }
     (shipped, tests_only)
+}
+
+#[test]
+fn manifest_dependency_sets_read_dotted_tables() {
+    let text = "[dependencies.serde]\nversion = \"1\"\n\n[dev-dependencies.sha2]\nversion = \"0.10\"\n\n[target.'cfg(unix)'.dependencies.anyhow]\nversion = \"1\"\n";
+    let (shipped, tests_only) = manifest_dependency_sets(text);
+    let expected_shipped: BTreeSet<String> = ["anyhow", "serde"]
+        .iter()
+        .map(|name| name.to_string())
+        .collect();
+    let expected_tests_only: BTreeSet<String> = ["sha2"]
+        .iter()
+        .map(|name| name.to_string())
+        .collect();
+    assert_eq!(shipped, expected_shipped);
+    assert_eq!(tests_only, expected_tests_only);
 }
 
 #[test]
