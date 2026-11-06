@@ -12,7 +12,8 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::artifacts::{Artifact, Statement, WorthError, escape_source, values_equal};
-use crate::errors::{ForkdriftError, InterfaceMismatchError};
+use crate::errors::{ForkdriftError, InterfaceMismatchError, SourceNameError};
+use crate::pytext::carries_line_break;
 
 /// The kind of a divergence over a term's value.
 pub const TERM_VALUE: &str = "term-value";
@@ -187,10 +188,18 @@ fn presence_divergences(left: &Artifact, right: &Artifact, found: &mut Vec<Diver
 
 /// Compare two artifacts for one interface and return the
 /// divergences between them, sorted for the report (FD-10).
+/// A source name that carries a line break is refused ahead
+/// of every other check (FD-33).
 pub fn compare_artifacts(
     left: &Artifact,
     right: &Artifact,
 ) -> Result<Vec<Divergence>, CompareError> {
+    if carries_line_break(&left.source) {
+        return Err(CompareError::Refusal(SourceNameError::new("left").into()));
+    }
+    if carries_line_break(&right.source) {
+        return Err(CompareError::Refusal(SourceNameError::new("right").into()));
+    }
     if left.interface != right.interface {
         return Err(CompareError::Refusal(
             InterfaceMismatchError::new(format!(

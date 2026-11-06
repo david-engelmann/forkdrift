@@ -19,4 +19,4 @@ pub mod pytext;
 
 pub use artifacts::{Artifact, Statement, parse_artifact};
 pub use divergence::{Divergence, compare_artifacts, format_report, format_sweep, sweep_artifacts};
-pub use errors::{ArtifactError, ForkdriftError, InterfaceMismatchError};
+pub use errors::{ArtifactError, ForkdriftError, InterfaceMismatchError, SourceNameError};

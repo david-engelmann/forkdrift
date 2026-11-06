@@ -144,6 +144,32 @@ pub fn split(text: &str) -> Vec<&str> {
     pieces
 }
 
+/// Whether a source name, read as the bytes it was given in,
+/// carries a character of the line boundary set (FD-33). The
+/// seven ASCII members are single bytes, which never stand
+/// inside a multi-byte sequence, and the remaining members
+/// are read by the UTF-8 byte sequences that encode them, so
+/// a name that is not valid UTF-8 is read on the same terms a
+/// report would print it, and a byte outside those characters
+/// and sequences, a lone continuation byte among them, is not
+/// a line break.
+pub fn carries_line_break(source: &[u8]) -> bool {
+    let mut index = 0;
+    while index < source.len() {
+        match source[index] {
+            0x0A | 0x0D | 0x0B | 0x0C | 0x1C | 0x1D | 0x1E => return true,
+            0xC2 if source.get(index + 1) == Some(&0x85) => return true,
+            0xE2 if source.get(index + 1) == Some(&0x80)
+                && matches!(source.get(index + 2), Some(0xA8 | 0xA9)) =>
+            {
+                return true;
+            }
+            _ => index += 1,
+        }
+    }
+    false
+}
+
 /// Whether the character ends a line in the oracle's line
 /// boundary set.
 fn is_boundary(c: char) -> bool {
