@@ -67,6 +67,18 @@ fn large_report_to_a_dead_output_answers_1() {
     assert!(stderr.contains("Broken pipe"), "{stderr}");
 }
 
+/// The pin the FD-30 port note carried into this round. The
+/// large document's print failure answers 1 when its error
+/// line lands, and when the error stream is dead as well the
+/// line has nowhere to land and the answer is 120.
+#[test]
+fn large_report_with_both_streams_dead_answers_120() {
+    let dir = temp_dir("output-large-both-dead");
+    let (left, right) = diverging_pair(&dir, 90);
+    let result = run_cli_on_closed_streams(&["compare", &left, &right], &dir);
+    assert_eq!(result.code, 120);
+}
+
 #[test]
 fn help_to_a_dead_output_answers_120() {
     let dir = temp_dir("pipe-help");
