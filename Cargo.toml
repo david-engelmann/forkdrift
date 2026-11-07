@@ -2,7 +2,7 @@
 name = "forkdrift"
 version = "0.1.0"
 edition = "2024"
-description = "Detect semantic divergence between two recorded artifacts for one interface"
+description = "Tells whether two recorded artifacts that state the same interface actually diverge. Both files are read, compared structurally, and reported without executing either."
 license = "MIT"
 
 [dependencies]

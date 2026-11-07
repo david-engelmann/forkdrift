@@ -1,5 +1,4 @@
-//! Forkdrift, the detector of semantic divergence between
-//! two recorded artifacts for one interface.
+//! Tells whether two recorded artifacts that state the same interface actually diverge. Both files are read, compared structurally, and reported without executing either.
 //!
 //! Two runs of one system leave recorded artifacts behind,
 //! and the artifacts can disagree in what they state for the
