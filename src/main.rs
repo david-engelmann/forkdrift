@@ -44,7 +44,7 @@ use forkdrift::pytext;
 
 #[derive(Parser)]
 #[command(
-    about = "Detect semantic divergence between two recorded artifacts for one interface.",
+    about = "Tells whether two recorded artifacts that state the same interface actually diverge. Both files are read, compared structurally, and reported without executing either.",
     subcommand_required = true,
     infer_long_args = true,
     disable_help_subcommand = true

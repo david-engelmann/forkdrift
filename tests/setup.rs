@@ -104,6 +104,29 @@ fn readme_status_reports_rounds() {
     );
 }
 
+const DESCRIPTION: &str = "Tells whether two recorded artifacts that state the same interface actually diverge. Both files are read, compared structurally, and reported without executing either.";
+
+#[test]
+fn the_description_stands_on_every_surface() {
+    for path in [
+        "README.md",
+        "Cargo.toml",
+        "src/lib.rs",
+        "tests/cli_corpus.json",
+    ] {
+        let text = read_repo(path);
+        assert!(
+            text.contains(DESCRIPTION),
+            "the description must stand in {path}"
+        );
+    }
+    let main = read_repo("src/main.rs");
+    assert!(
+        main.contains(&format!("about = \"{DESCRIPTION}\"")),
+        "the command line about must carry the description"
+    );
+}
+
 /// The dependency names a manifest declares, split into
 /// the set the shipped targets build against and the set
 /// only the tests build against. A section whose name ends
