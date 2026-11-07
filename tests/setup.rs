@@ -108,18 +108,29 @@ const DESCRIPTION: &str = "Tells whether two recorded artifacts that state the s
 
 #[test]
 fn the_description_stands_on_every_surface() {
-    for path in [
-        "README.md",
-        "Cargo.toml",
-        "src/lib.rs",
-        "tests/cli_corpus.json",
-    ] {
-        let text = read_repo(path);
-        assert!(
-            text.contains(DESCRIPTION),
-            "the description must stand in {path}"
-        );
-    }
+    let readme = read_repo("README.md");
+    let lede = readme
+        .lines()
+        .find(|line| !line.is_empty() && !line.starts_with('#'))
+        .expect("the README carries a lede line");
+    assert_eq!(lede, DESCRIPTION, "the README lede must be the description");
+    let manifest = read_repo("Cargo.toml");
+    assert!(
+        manifest.contains(&format!("description = \"{DESCRIPTION}\"")),
+        "the package description field must be the description"
+    );
+    let lib = read_repo("src/lib.rs");
+    let doc_line = lib.lines().next().expect("the crate carries doc lines");
+    assert_eq!(
+        doc_line,
+        format!("//! {DESCRIPTION}"),
+        "the first crate doc line must be the description"
+    );
+    let corpus = read_repo("tests/cli_corpus.json");
+    assert!(
+        corpus.contains(DESCRIPTION),
+        "the corpus root help expectations must carry the description"
+    );
     let main = read_repo("src/main.rs");
     assert!(
         main.contains(&format!("about = \"{DESCRIPTION}\"")),

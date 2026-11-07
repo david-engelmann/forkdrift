@@ -42,7 +42,7 @@ The command prints the divergence report at the top of this page and exits with 
 
 ### compare
 
-`forkdrift compare <left> <right>` reads two recorded artifacts and prints one block for each divergence, naming the interface, the name the divergence stands over, and its kind, and quoting the line each side states. The kinds are term-value, where a term carries a different value, result-type, where an operation states a different result type, excluded-but-defined, where one side excludes a name the other defines, and presence, where only one side defines a name at all. A value compares by exact decimal worth only when it matches the number grammar of the format, and a value outside the grammar compares as text. The run at the top of this page is a compare, and the committed examples carry its output beside the inputs as examples/divergences.txt.
+`forkdrift compare <left> <right>` reads two recorded artifacts and prints one block for each divergence, naming the interface, the name the divergence stands over, and its kind, and quoting the line each side states. The kinds are term-value, where a term carries a different value, result-type, where an operation states a different result type, excluded-but-defined, where one side excludes a name the other defines, and presence, where one side makes a statement, a term or an operation, that the other side does not make in the same form. A value compares by exact decimal worth only when it matches the number grammar of the format, and a value outside the grammar compares as text. The run at the top of this page is a compare, and the committed examples carry its output beside the inputs as examples/divergences.txt.
 
 ### sweep
 
@@ -66,7 +66,7 @@ divergence shard-store store presence
   right (examples/presence-b.tape) interface shard-store
 ```
 
-Every command reads only the files it is handed. An artifact that cannot be read or does not parse refuses with one error line and exit status 2, and a malformed invocation exits with status 2. A source name that carries a line break is refused before anything prints it, so a name cannot splice a forged row into a report. A value whose exponent runs past the conversion limit refuses at exit status 1.
+Every command reads only the files it is handed. An artifact that cannot be read or does not parse refuses with one error line and exit status 2, and a malformed invocation exits with status 2. A source name that carries a line break is refused before anything prints it, so a name cannot splice a forged row into a report. A value whose exponent runs past the conversion limit refuses at exit status 1 when the comparison has to convert it, and two values written identically agree before any conversion.
 
 ## Status
 
