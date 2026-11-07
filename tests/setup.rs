@@ -131,12 +131,12 @@ fn manifest_dependency_sets(text: &str) -> (BTreeSet<String>, BTreeSet<String>) 
                 } else {
                     None
                 };
-                if let Some(target) = dotted {
-                    if let Some(name) = segments.get(index + 1) {
-                        let name = name.trim_matches('"');
-                        if !name.is_empty() {
-                            target.insert(name.to_string());
-                        }
+                if let Some(target) = dotted
+                    && let Some(name) = segments.get(index + 1)
+                {
+                    let name = name.trim_matches('"');
+                    if !name.is_empty() {
+                        target.insert(name.to_string());
                     }
                 }
             }
@@ -169,10 +169,8 @@ fn manifest_dependency_sets_read_dotted_tables() {
         .iter()
         .map(|name| name.to_string())
         .collect();
-    let expected_tests_only: BTreeSet<String> = ["sha2"]
-        .iter()
-        .map(|name| name.to_string())
-        .collect();
+    let expected_tests_only: BTreeSet<String> =
+        ["sha2"].iter().map(|name| name.to_string()).collect();
     assert_eq!(shipped, expected_shipped);
     assert_eq!(tests_only, expected_tests_only);
 }
