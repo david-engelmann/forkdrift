@@ -56,7 +56,7 @@ Verify claims from the thing itself. A result is read from the file on disk, the
 
 This repo is forkdrift. Its contract lives in CONTRACT.md and that file is the spec for every slice.
 
-Boundary. Forkdrift detects semantic divergence across the whole fleet. Crosscurrent, also owned by this chat, reconciles the pairs forkdrift catches, and forkdrift never performs a reconciliation itself.
+Boundary. Forkdrift detects semantic divergence across the whole fleet. Reconciliation of the pairs it catches is the reconcile subcommand's work, over the recorded branch states and the records the detector prints, and the subcommand performs no detection and the detector performs no reconciliation.
 
 First slice. A reader over recorded run tapes or plain diffs from two concurrent runs that detects one divergence class, two incompatible contracts for one interface, and raises the alarm with both definitions quoted.
 
