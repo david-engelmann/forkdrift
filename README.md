@@ -70,7 +70,7 @@ Every command reads only the files it is handed. An artifact that cannot be read
 
 ## Status
 
-The tool is complete at the surface its contract describes, with no stubbed or held back part, and the full CI gate runs on every change. Round 10 landed in PR 22, widening the help short guard to every command in the tree and closing the root table gap in the long pin. Round 11 landed in PR 24, stating the fold contract for crosscurrent to join this repo as a reconcile subcommand, with the hand-off formats standing as versioned contracts. Closed rounds 11 of 100.
+The tool is complete at the surface its contract describes, with no stubbed or held back part, and the full CI gate runs on every change. Round 10 landed in PR 22, widening the help short guard to every command in the tree and closing the root table gap in the long pin. Round 11 landed in PR 24, stating the fold contract for crosscurrent to join this repo as a reconcile subcommand, with the hand-off formats standing as versioned contracts. Round 12 landed in PR 26, building the reconcile subcommand with crosscurrent's suite and corpus carried across, proven against the standing crosscurrent binary with no behavioural difference. Closed rounds 12 of 100.
 
 ## License
 
