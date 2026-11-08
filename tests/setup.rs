@@ -104,7 +104,7 @@ fn readme_status_reports_rounds() {
     );
 }
 
-const DESCRIPTION: &str = "Tells whether two recorded artifacts that state the same interface actually diverge. Both files are read, compared structurally, and reported without executing either.";
+const DESCRIPTION: &str = "Tells whether two recorded artifacts that state the same interface actually diverge, and reconciles the divergences over recorded branch states. Everything works from recorded files, and nothing is executed.";
 
 #[test]
 fn the_description_stands_on_every_surface() {

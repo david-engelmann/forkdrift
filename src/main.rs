@@ -56,7 +56,7 @@ use forkdrift::reconcile::tasks::{build_tasks, format_tasks};
 
 #[derive(Parser)]
 #[command(
-    about = "Tells whether two recorded artifacts that state the same interface actually diverge. Both files are read, compared structurally, and reported without executing either.",
+    about = "Tells whether two recorded artifacts that state the same interface actually diverge, and reconciles the divergences over recorded branch states. Everything works from recorded files, and nothing is executed.",
     subcommand_required = true,
     infer_long_args = true,
     disable_help_subcommand = true
@@ -282,10 +282,9 @@ fn print_out(text: &[u8]) -> anyhow::Result<()> {
 /// exit flush and answers at status 120, and one at or
 /// over it surfaces during the write, where the handler of
 /// that surface catches it and answers at status 2 with its
-/// cannot read line. The flush line names crosscurrent
-/// because the line is the carried text of XC-29, standing
-/// as a historical identifier of the session work's origin
-/// (FD-54).
+/// cannot read line. The flush line is the carried text
+/// of XC-29 with its name amended under FD-60, the line
+/// naming forkdrift from Round 13.
 fn print_out_reconcile(text: &[u8]) -> anyhow::Result<()> {
     let stdout = std::io::stdout();
     let mut lock = stdout.lock();
@@ -294,7 +293,7 @@ fn print_out_reconcile(text: &[u8]) -> anyhow::Result<()> {
         .map_err(|_error| {
             if text.len() < STDOUT_BUFFER_BYTES {
                 anyhow::Error::new(FailedFlush(
-                    "crosscurrent could not print its report".to_string(),
+                    "forkdrift could not print its report".to_string(),
                 ))
             } else {
                 anyhow::Error::new(PrintCaught("cannot read None, Broken pipe".to_string()))
@@ -555,13 +554,13 @@ enum Assigned {
 /// The path a distributed slot hands to its read, or the
 /// uncaught answer when the slot received a list in place
 /// of a path. The line is the carried text of the
-/// correction to XC-12, standing verbatim as a historical
-/// identifier of the session work's origin (FD-54).
+/// correction to XC-12 with its name amended under FD-60,
+/// the line naming forkdrift from Round 13.
 fn slot_path(slot: &Slot) -> anyhow::Result<PathBuf> {
     match slot {
         Slot::One(path) => Ok(PathBuf::from(path)),
         Slot::Listed(name) => Err(anyhow::Error::new(Uncaught(format!(
-            "crosscurrent could not finish the reconciliation, {name} was given as a list"
+            "forkdrift could not finish the reconciliation, {name} was given as a list"
         )))),
     }
 }
