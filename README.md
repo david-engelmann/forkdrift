@@ -70,7 +70,7 @@ Every command reads only the files it is handed. An artifact that cannot be read
 
 ## Status
 
-The tool is complete at the surface its contract describes, with no stubbed or held back part, and the full CI gate runs on every change. Closed rounds 9 of 100.
+The tool is complete at the surface its contract describes, with no stubbed or held back part, and the full CI gate runs on every change. Round 10 landed in PR 22, widening the help short guard to every command in the tree and closing the root table gap in the long pin. Closed rounds 10 of 100.
 
 ## License
 
