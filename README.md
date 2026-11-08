@@ -2,7 +2,7 @@
 
 Tells whether two recorded artifacts that state the same interface actually diverge, and reconciles the divergences over recorded branch states. Everything works from recorded files, and nothing is executed.
 
-Forkdrift is a command line tool that works over recorded artifacts, the plain text statements of one interface that two runs of a system leave behind. Its compare command reads two artifacts, compares their statements one by one, and prints a report of every divergence it finds, quoting the lines that disagree. A sweep compares one baseline artifact against several others in turn and attributes every divergence to the pair that raised it. The reconcile subcommand takes the divergences the compare and sweep surface, as records, and two recorded branch states, and reconciles the pair over the states. Everything forkdrift does works from recorded files, and nothing is executed.
+Forkdrift is a command line tool that works over recorded artifacts, the plain text statements of one interface that two runs of a system leave behind. Its compare command reads two artifacts, compares their statements one by one, and prints a report of every divergence it finds, quoting the lines that disagree. A sweep compares one baseline artifact against several others in turn and attributes every divergence to the pair that raised it. The reconcile subcommand takes those divergences as records, one divergence block at a time in the form compare prints, and reconciles the pair over two recorded branch states. Everything forkdrift does works from recorded files, and nothing is executed.
 
 [![CI](https://github.com/david-engelmann/forkdrift/actions/workflows/ci.yml/badge.svg)](https://github.com/david-engelmann/forkdrift/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -68,14 +68,14 @@ divergence shard-store store presence
 
 ### reconcile
 
-`forkdrift reconcile` does the session work over the detector's records. The divergence record format the detector prints and the branch state format each stand at version 1 under the contract, and the reconcile forms read the detector's records as printed, against two recorded branch states. The subcommand performs no detection of its own.
+`forkdrift reconcile` does the session work over the detector's records. The divergence record format the detector prints and the branch state format each stand at version 1 under the contract, and the reconcile forms read the detector's records as printed, against two recorded branch states. A record is one divergence block. A sweep document is not a record, because it carries its blocks under pair headers, and the forms refuse it whole, while a block lifted out of it reads as the record it is. The subcommand performs no detection of its own.
 
 The stage form, `forkdrift reconcile stage <left> <right> <record>`, reads the two branch states and one record and prints the cross-apply report, staging each reported name as clean, conflicting, one-sided, or missing across the two states. The handback form, `forkdrift reconcile handback <left> <right> <record>...`, reads the two branch states and a bundle of one or more records and prints the handback, one sized task per divergence in the bundle.
 
 The committed examples carry one session as `examples/branch-a.state`, `examples/branch-b.state`, and `examples/reconcile-divergences.txt`, and the handback it prints stands beside the inputs as `examples/handback.txt`.
 
 ```console
-$ ./forkdrift reconcile handback examples/branch-a.state examples/branch-b.state examples/reconcile-divergences.txt
+$ ./target/debug/forkdrift reconcile handback examples/branch-a.state examples/branch-b.state examples/reconcile-divergences.txt
 task shard-store store
 authors engineer-a engineer-b
 kind result-type
