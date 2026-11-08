@@ -30,7 +30,7 @@ operation store = ack
 
 const RECORD: &str = "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n";
 
-const FLUSH_LINE: &[u8] = b"error: crosscurrent could not print its report\n";
+const FLUSH_LINE: &[u8] = b"error: forkdrift could not print its report\n";
 const BROKEN_PIPE_LINE: &[u8] = b"error: cannot read None, Broken pipe\n";
 
 fn session(dir: &std::path::Path, record_text: &str) -> (String, String, String) {

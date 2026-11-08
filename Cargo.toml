@@ -2,7 +2,7 @@
 name = "forkdrift"
 version = "0.1.0"
 edition = "2024"
-description = "Tells whether two recorded artifacts that state the same interface actually diverge. Both files are read, compared structurally, and reported without executing either."
+description = "Tells whether two recorded artifacts that state the same interface actually diverge, and reconciles the divergences over recorded branch states. Everything works from recorded files, and nothing is executed."
 license = "MIT"
 
 [dependencies]

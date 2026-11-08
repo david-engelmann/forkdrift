@@ -1628,7 +1628,7 @@
       "expect": {
         "code": 1,
         "stdout": "",
-        "stderr": "error: crosscurrent could not finish the reconciliation, the divergence record was given as a list\n",
+        "stderr": "error: forkdrift could not finish the reconciliation, the divergence record was given as a list\n",
         "files": {
           "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
           "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
@@ -1656,7 +1656,7 @@
       "expect": {
         "code": 1,
         "stdout": "",
-        "stderr": "error: crosscurrent could not finish the reconciliation, the right branch state was given as a list\n",
+        "stderr": "error: forkdrift could not finish the reconciliation, the right branch state was given as a list\n",
         "files": {
           "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
           "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",

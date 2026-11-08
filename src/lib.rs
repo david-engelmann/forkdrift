@@ -1,4 +1,4 @@
-//! Tells whether two recorded artifacts that state the same interface actually diverge. Both files are read, compared structurally, and reported without executing either.
+//! Tells whether two recorded artifacts that state the same interface actually diverge, and reconciles the divergences over recorded branch states. Everything works from recorded files, and nothing is executed.
 //!
 //! Two runs of one system leave recorded artifacts behind,
 //! and the artifacts can disagree in what they state for the
