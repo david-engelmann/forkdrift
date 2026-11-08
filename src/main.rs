@@ -1,9 +1,12 @@
 //! Command line entry point, the forkdrift binary.
 //!
 //! Subcommands
-//!   compare  compare two recorded artifacts
-//!   sweep    compare one baseline artifact against several
-//!            others
+//!   compare    compare two recorded artifacts
+//!   sweep      compare one baseline artifact against several
+//!              others
+//!   reconcile  stage two recorded branch states over a
+//!              divergence record and hand back the sized
+//!              reconciliation tasks
 //!
 //! The argument parsing is clap, adopted under the
 //! maintainer's tool choice ruling. Before clap sees the
@@ -28,8 +31,13 @@
 //! while one that surfaces during the write answers at
 //! status 1, because the Python command line holds the
 //! report write outside the handlers that catch its own
-//! refusals (FD-30). Errors in main ride on anyhow. The
-//! library's error types derive thiserror.
+//! refusals (FD-30). The reconcile subcommand carries the
+//! print discipline of its own surface (XC-29), so its
+//! documents print through their own print function, and
+//! its separator distribution and its list answer stand as
+//! the corrections to XC-12 and XC-22 record them. Errors
+//! in main ride on anyhow. The library's error types derive
+//! thiserror.
 
 use std::ffi::OsString;
 use std::io::Write;
@@ -41,6 +49,10 @@ use clap::{Args, CommandFactory, Parser, Subcommand};
 use forkdrift::artifacts::{Artifact, escape_source, parse_artifact};
 use forkdrift::divergence::{CompareError, compare_artifacts, format_report, format_sweep};
 use forkdrift::pytext;
+use forkdrift::reconcile::records::{Divergence, bundle_divergences, parse_divergence_record};
+use forkdrift::reconcile::staging::{cross_apply, format_stage_report};
+use forkdrift::reconcile::states::{BranchState, parse_branch_state};
+use forkdrift::reconcile::tasks::{build_tasks, format_tasks};
 
 #[derive(Parser)]
 #[command(
@@ -62,6 +74,9 @@ enum Command {
     /// Compare one baseline artifact against several others.
     #[command(infer_long_args = true, args_override_self = true)]
     Sweep(SweepArgs),
+    /// Reconcile two recorded branch states over a divergence record.
+    #[command(infer_long_args = true, args_override_self = true)]
+    Reconcile(ReconcileArgs),
 }
 
 /// The value parser of a positional path argument, reading
@@ -108,6 +123,54 @@ struct SweepArgs {
     /// Paths to the other recorded artifacts.
     #[arg(value_parser = PathValueParser, required = true, num_args = 1..)]
     others: Vec<PathBuf>,
+}
+
+#[derive(Args)]
+#[command(
+    subcommand_required = true,
+    infer_long_args = true,
+    disable_help_subcommand = true
+)]
+struct ReconcileArgs {
+    #[command(subcommand)]
+    form: ReconcileForm,
+}
+
+#[derive(Subcommand)]
+enum ReconcileForm {
+    /// Print the cross-apply report for two branch states.
+    #[command(infer_long_args = true, args_override_self = true)]
+    Stage(StageArgs),
+    /// Print one sized reconciliation task per divergence.
+    #[command(infer_long_args = true, args_override_self = true)]
+    Handback(HandbackArgs),
+}
+
+#[derive(Args)]
+struct StageArgs {
+    /// Path to the left recorded branch state.
+    #[arg(value_parser = PathValueParser)]
+    left: PathBuf,
+    /// Path to the right recorded branch state.
+    #[arg(value_parser = PathValueParser)]
+    right: PathBuf,
+    /// Path to the recorded divergence record.
+    #[arg(value_parser = PathValueParser)]
+    divergences: PathBuf,
+}
+
+#[derive(Args)]
+struct HandbackArgs {
+    /// Path to the left recorded branch state.
+    #[arg(value_parser = PathValueParser)]
+    left: PathBuf,
+    /// Path to the right recorded branch state.
+    #[arg(value_parser = PathValueParser)]
+    right: PathBuf,
+    /// Paths to the recorded divergence records of the
+    /// bundle.
+    #[arg(value_parser = PathValueParser, required = true, num_args = 1..)]
+    divergences: Vec<PathBuf>,
 }
 
 /// A failure the Python tool lets escape uncaught.
@@ -164,6 +227,27 @@ impl std::fmt::Display for FailedFlush {
 
 impl std::error::Error for FailedFlush {}
 
+/// A standard output failure that surfaces during the
+/// write on the reconcile surface, which the Python tool
+/// behind that surface catches in its own handler because
+/// the write stands inside the handler's reach.
+///
+/// The binary carries the failure in its own type and main
+/// answers it with status 2 and the handler's own line, the
+/// cannot read line the handler prints for it, under the
+/// print discipline of XC-29 the reconcile surface carries
+/// rather than the discipline of FD-30.
+#[derive(Debug)]
+struct PrintCaught(String);
+
+impl std::fmt::Display for PrintCaught {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for PrintCaught {}
+
 /// The size of the buffer the Python tool holds its printed
 /// output in, in bytes. A printed output of this size or
 /// more is written through as it is printed, so a failure
@@ -186,6 +270,34 @@ fn print_out(text: &[u8]) -> anyhow::Result<()> {
                 anyhow::Error::new(PrintFailed(format!(
                     "forkdrift could not print its report, {error}"
                 )))
+            }
+        })
+}
+
+/// Print a document of the reconcile surface, under the
+/// print discipline of XC-29 rather than the discipline of
+/// FD-30.
+///
+/// A failure under the buffer size surfaces only at the
+/// exit flush and answers at status 120, and one at or
+/// over it surfaces during the write, where the handler of
+/// that surface catches it and answers at status 2 with its
+/// cannot read line. The flush line names crosscurrent
+/// because the line is the carried text of XC-29, standing
+/// as a historical identifier of the session work's origin
+/// (FD-54).
+fn print_out_reconcile(text: &[u8]) -> anyhow::Result<()> {
+    let stdout = std::io::stdout();
+    let mut lock = stdout.lock();
+    lock.write_all(text)
+        .and_then(|()| lock.flush())
+        .map_err(|_error| {
+            if text.len() < STDOUT_BUFFER_BYTES {
+                anyhow::Error::new(FailedFlush(
+                    "crosscurrent could not print its report".to_string(),
+                ))
+            } else {
+                anyhow::Error::new(PrintCaught("cannot read None, Broken pipe".to_string()))
             }
         })
 }
@@ -274,6 +386,56 @@ fn read_artifact(path: &Path) -> anyhow::Result<Artifact> {
     Ok(parse_artifact(&text, given)?)
 }
 
+/// Read one recorded text of the reconcile surface under
+/// the name it was given.
+///
+/// The file is opened under the folded form of its path and
+/// a failed read names that folded form, while the text
+/// itself is parsed under the path as written, so parse
+/// refusals name it as written (the probe correction to
+/// XC-12). The read applies the universal newline
+/// translation of XC-27, so a carriage return and line feed
+/// pair and a lone carriage return both reach the parsers
+/// as a line feed.
+fn read_text(path: &Path) -> anyhow::Result<String> {
+    use std::os::unix::ffi::OsStrExt;
+    let given = path.as_os_str().as_bytes();
+    let folded = py_path_folded(given);
+    let bytes = std::fs::read(std::ffi::OsStr::from_bytes(&folded)).map_err(|error| {
+        anyhow::Error::msg(format!(
+            "cannot read {}, {}",
+            escape_source(&folded),
+            strerror(&error)
+        ))
+    })?;
+    let text = String::from_utf8(bytes).map_err(|_| {
+        anyhow::Error::msg(format!(
+            "{} is not readable as utf-8 text",
+            escape_source(given)
+        ))
+    })?;
+    Ok(text.replace("\r\n", "\n").replace('\r', "\n"))
+}
+
+/// Read and parse one branch state under the name it was
+/// given.
+fn read_state(path: &Path) -> anyhow::Result<BranchState> {
+    use std::os::unix::ffi::OsStrExt;
+    let text = read_text(path)?;
+    let source = escape_source(path.as_os_str().as_bytes());
+    Ok(parse_branch_state(&text, &source)?)
+}
+
+/// Read and parse one divergence record under the name it
+/// was given, returning the name with the divergences.
+fn read_record(path: &Path) -> anyhow::Result<(String, Vec<Divergence>)> {
+    use std::os::unix::ffi::OsStrExt;
+    let text = read_text(path)?;
+    let source = escape_source(path.as_os_str().as_bytes());
+    let divergences = parse_divergence_record(&text, &source)?;
+    Ok((source, divergences))
+}
+
 /// Carry a comparison failure into main, keeping the
 /// uncaught kind apart so the exit status follows it.
 fn compare_failure(error: CompareError) -> anyhow::Error {
@@ -307,6 +469,138 @@ fn cmd_sweep(args: &SweepArgs) -> anyhow::Result<i32> {
     Ok(i32::from(diverged))
 }
 
+fn cmd_stage(args: &StageArgs) -> anyhow::Result<i32> {
+    let left = read_state(&args.left)?;
+    let right = read_state(&args.right)?;
+    let (_, divergences) = read_record(&args.divergences)?;
+    finish_stage(&left, &right, &divergences)
+}
+
+/// Cross-apply the two branch states over the divergences
+/// and print the staging report.
+fn finish_stage(
+    left: &BranchState,
+    right: &BranchState,
+    divergences: &[Divergence],
+) -> anyhow::Result<i32> {
+    let staging = cross_apply(left, right, divergences)?;
+    print_out_reconcile(format_stage_report(&staging).as_bytes())?;
+    Ok(0)
+}
+
+fn cmd_handback(args: &HandbackArgs) -> anyhow::Result<i32> {
+    let left = read_state(&args.left)?;
+    let right = read_state(&args.right)?;
+    let mut records = Vec::new();
+    for path in &args.divergences {
+        records.push(read_record(path)?);
+    }
+    finish_handback(&left, &right, &records)
+}
+
+/// Bundle the records, cross-apply the two branch states
+/// over the union, build the tasks, and print the handback
+/// document.
+fn finish_handback(
+    left: &BranchState,
+    right: &BranchState,
+    records: &[(String, Vec<Divergence>)],
+) -> anyhow::Result<i32> {
+    let divergences = bundle_divergences(records)?;
+    let staging = cross_apply(left, right, &divergences)?;
+    let tasks = build_tasks(left, right, &divergences, &staging)?;
+    print_out_reconcile(format_tasks(&tasks).as_bytes())?;
+    Ok(0)
+}
+
+/// One positional slot of a reconcile form after the
+/// separator distribution the probe correction to XC-12
+/// and XC-22 records.
+enum Slot {
+    /// The slot received the one path token of its share.
+    One(OsString),
+    /// The slot received a list in place of a path, because
+    /// the deletion of its share's separator token left the
+    /// share holding no token. The text names the slot the
+    /// way the uncaught line names it.
+    Listed(&'static str),
+}
+
+/// A reconcile form whose arguments the separator
+/// distribution assigned in full, ready to run without
+/// clap.
+enum Assigned {
+    /// The stage form and its three slots in read order.
+    Stage {
+        /// The left branch state slot.
+        left: Slot,
+        /// The right branch state slot.
+        right: Slot,
+        /// The divergence record slot.
+        record: Slot,
+    },
+    /// The handback form, its two branch state slots in
+    /// read order, and the record paths of its bundle
+    /// share, which may be empty.
+    Handback {
+        /// The left branch state slot.
+        left: Slot,
+        /// The right branch state slot.
+        right: Slot,
+        /// The record paths of the bundle share.
+        records: Vec<OsString>,
+    },
+}
+
+/// The path a distributed slot hands to its read, or the
+/// uncaught answer when the slot received a list in place
+/// of a path. The line is the carried text of the
+/// correction to XC-12, standing verbatim as a historical
+/// identifier of the session work's origin (FD-54).
+fn slot_path(slot: &Slot) -> anyhow::Result<PathBuf> {
+    match slot {
+        Slot::One(path) => Ok(PathBuf::from(path)),
+        Slot::Listed(name) => Err(anyhow::Error::new(Uncaught(format!(
+            "crosscurrent could not finish the reconciliation, {name} was given as a list"
+        )))),
+    }
+}
+
+/// Run a reconcile form whose arguments the separator
+/// distribution assigned, without clap.
+///
+/// The slots resolve in read order, so a list in one slot
+/// is met only when the read of that slot is reached, after
+/// the slots before it have read and parsed under their
+/// standing refusals.
+fn cmd_assigned(assigned: &Assigned) -> anyhow::Result<i32> {
+    match assigned {
+        Assigned::Stage {
+            left,
+            right,
+            record,
+        } => {
+            let left = read_state(&slot_path(left)?)?;
+            let right = read_state(&slot_path(right)?)?;
+            let (_, divergences) = read_record(&slot_path(record)?)?;
+            finish_stage(&left, &right, &divergences)
+        }
+        Assigned::Handback {
+            left,
+            right,
+            records,
+        } => {
+            let left = read_state(&slot_path(left)?)?;
+            let right = read_state(&slot_path(right)?)?;
+            let mut named = Vec::new();
+            for path in records {
+                named.push(read_record(&PathBuf::from(path))?);
+            }
+            finish_handback(&left, &right, &named)
+        }
+    }
+}
+
 /// The exit status an error from a command answers with.
 ///
 /// A failure the Python tool lets escape uncaught answers
@@ -315,7 +609,10 @@ fn cmd_sweep(args: &SweepArgs) -> anyhow::Result<i32> {
 /// the exit flush answers with status 120, the status the
 /// Python tool exits with when it reports that failure as
 /// an exception ignored. Every other refusal the tool makes
-/// answers with status 2.
+/// answers with status 2. The reconcile surface's failures
+/// land on the same statuses under XC-29, its flush failure
+/// at 120, its list answer at 1 as the uncaught failure it
+/// is, and its caught print failure at 2 with the refusals.
 fn refusal_status(error: &anyhow::Error) -> u8 {
     if error.downcast_ref::<FailedFlush>().is_some() {
         return 120;
@@ -425,6 +722,45 @@ fn subcommand_specs() -> Vec<SubcommandSpec> {
         .collect()
 }
 
+/// The forms of the reconcile subcommand, with the long
+/// flags the derive model declares for each.
+///
+/// The flag tables come from clap's own model in the
+/// manner of subcommand_specs, read off the reconcile
+/// command of the built tree, so the derive model stays
+/// the one owner of the flag set at this level too.
+fn form_specs() -> Vec<SubcommandSpec> {
+    let command = Cli::command();
+    let Some(reconcile) = command
+        .get_subcommands()
+        .find(|sub| sub.get_name() == "reconcile")
+    else {
+        return Vec::new();
+    };
+    reconcile
+        .get_subcommands()
+        .map(|sub| {
+            let mut longs: Vec<String> = Vec::new();
+            for arg in sub.get_arguments() {
+                let Some(long) = arg.get_long() else {
+                    continue;
+                };
+                let name = format!("--{long}");
+                if !longs.contains(&name) {
+                    longs.push(name);
+                }
+            }
+            if !longs.iter().any(|long| long == "--help") {
+                longs.push("--help".to_string());
+            }
+            SubcommandSpec {
+                name: sub.get_name().to_string(),
+                longs,
+            }
+        })
+        .collect()
+}
+
 /// How a token reads as a help token on the current parser.
 enum HelpRead {
     /// Not a help token.
@@ -477,10 +813,13 @@ fn help_read(token: &str, longs: &[String]) -> HelpRead {
 enum Preprocess {
     /// Hand these arguments to clap.
     Run(Vec<OsString>),
-    /// Print the help of the named subcommand parser, or of
-    /// the top level parser when the name is absent, at
-    /// status 0.
-    FireHelp(Option<String>),
+    /// Print the help of the parser the command path names,
+    /// or of the top level parser when the path is empty,
+    /// at status 0.
+    FireHelp(Vec<String>),
+    /// Run the reconcile form the separator distribution
+    /// assigned, without clap.
+    Assigned(Assigned),
 }
 
 /// The hand set the preprocess walk reads help tokens
@@ -515,16 +854,38 @@ fn root_longs() -> Vec<String> {
 /// stream handed to clap, which refuses it there. Help
 /// fires where the scan reaches it, ahead of extra tokens
 /// already collected, and this walk answers a fired help
-/// token itself.
+/// token itself. The walk reaches one level deeper on the
+/// reconcile subcommand, where the token after it is read
+/// as the candidate for its form slot the way the
+/// subcommand token is read at the top level, and a
+/// separator standing there blocks the walk the same way.
+/// When the walk collects no option token on any level,
+/// the tokens behind a form go through the separator
+/// distribution the probe correction to XC-12 and XC-22
+/// records instead of the gathered hand off, which assigns
+/// them across the form's positional actions the way the
+/// oracle parser's own matching does, a second separator
+/// among the values included, and a complete distribution
+/// runs the form itself, because the list a single value
+/// action can receive under the distribution has no form
+/// the gathered hand off can carry. Every other shape on
+/// that surface keeps the gathered hand off.
 fn preprocess(tokens: &[OsString]) -> Preprocess {
     let specs = subcommand_specs();
+    let forms = form_specs();
     let root_longs: Vec<String> = root_longs();
+    let reconcile = specs.iter().position(|spec| spec.name == "reconcile");
     let mut raw: Vec<OsString> = Vec::new();
     let mut out: Vec<OsString> = Vec::new();
     let mut values: Vec<OsString> = Vec::new();
     let mut current: Option<usize> = None;
+    let mut form: Option<usize> = None;
     let mut blocked = false;
     let mut separated = false;
+    let mut root_option = false;
+    let mut mid_option = false;
+    let mut form_option = false;
+    let mut form_start: Option<usize> = None;
     for token in tokens {
         if separated {
             raw.push(token.clone());
@@ -538,20 +899,28 @@ fn preprocess(tokens: &[OsString]) -> Preprocess {
         let text = token.to_string_lossy().into_owned();
         if text == "--" {
             raw.push(token.clone());
-            if current.is_none() {
+            if current.is_none() || (current == reconcile && form.is_none()) {
                 blocked = true;
             } else {
                 separated = true;
             }
             continue;
         }
-        let longs: &[String] = match current {
-            Some(index) => &specs[index].longs,
-            None => &root_longs,
+        let longs: &[String] = match (current, form) {
+            (Some(_), Some(form_index)) => &forms[form_index].longs,
+            (Some(index), None) => &specs[index].longs,
+            (None, _) => &root_longs,
         };
         match help_read(&text, longs) {
             HelpRead::Fire => {
-                return Preprocess::FireHelp(current.map(|index| specs[index].name.clone()));
+                let mut path: Vec<String> = Vec::new();
+                if let Some(index) = current {
+                    path.push(specs[index].name.clone());
+                    if let Some(form_index) = form {
+                        path.push(forms[form_index].name.clone());
+                    }
+                }
+                return Preprocess::FireHelp(path);
             }
             HelpRead::Refuse(replacement) => {
                 blocked = true;
@@ -571,6 +940,23 @@ fn preprocess(tokens: &[OsString]) -> Preprocess {
                 // An option token at the top level is only
                 // collected, and a help token after it still
                 // fires.
+                root_option = true;
+                out.push(token.clone());
+            }
+            continue;
+        }
+        if current == reconcile && form.is_none() {
+            if let Some(form_index) = forms.iter().position(|spec| spec.name == text) {
+                form = Some(form_index);
+                form_start = Some(raw.len() - 1);
+                out.push(token.clone());
+            } else if reads_as_positional(&text) {
+                blocked = true;
+            } else {
+                // An option token on the reconcile command
+                // is only collected, and clap refuses it in
+                // the stream.
+                mid_option = true;
                 out.push(token.clone());
             }
             continue;
@@ -580,17 +966,132 @@ fn preprocess(tokens: &[OsString]) -> Preprocess {
         } else {
             // An option this parser does not declare is only
             // collected, and clap refuses it in the stream.
+            if form.is_some() {
+                form_option = true;
+            }
             out.push(token.clone());
         }
     }
     if blocked {
         return Preprocess::Run(raw);
     }
+    if form.is_some()
+        && !root_option
+        && !mid_option
+        && !form_option
+        && let (Some(form_index), Some(start)) = (form, form_start)
+    {
+        let handback = forms[form_index].name == "handback";
+        if let Some(assigned) = distribute(handback, &raw[start + 1..]) {
+            return Preprocess::Assigned(assigned);
+        }
+    }
     if !values.is_empty() {
         out.push(OsString::from("--"));
         out.extend(values);
     }
     Preprocess::Run(out)
+}
+
+/// Whether a token reads as a plain argument token in the
+/// oracle parser's pattern scan, which is a token that does
+/// not open with a dash, or a lone dash, or a token carrying
+/// a space, or a token naming a negative number in the
+/// pattern. A token the parser would read as an option
+/// stands outside the separator distribution, so its
+/// presence leaves the whole invocation to the gathered
+/// hand off.
+fn reads_as_plain_argument(token: &OsString) -> bool {
+    use std::os::unix::ffi::OsStrExt;
+    let Some(text) = token.to_str() else {
+        return !token.as_os_str().as_bytes().starts_with(b"-");
+    };
+    if !text.starts_with('-') || text == "-" {
+        return true;
+    }
+    if text.contains(' ') {
+        return true;
+    }
+    negative_number_matches(text)
+}
+
+/// Whether a token is the separator token, two dashes and
+/// nothing else, compared on bytes so a token whose bytes
+/// are not text never reads as one.
+fn is_separator_token(token: &OsString) -> bool {
+    use std::os::unix::ffi::OsStrExt;
+    token.as_os_str().as_bytes() == b"--"
+}
+
+/// Distribute the tokens after a reconcile form across the
+/// form's positional actions the way the oracle parser's
+/// pattern matching does, under the probe correction to
+/// XC-12 and XC-22.
+///
+/// Every token before the first separator token must read
+/// as a plain argument, and the assignment must be
+/// complete, three argument tokens for the stage form and
+/// at least three for the handback form, one to each single
+/// value action in order and the rest to the handback record
+/// action. The separator token joins the share of the
+/// argument token just before it, or the first share when
+/// it leads, and the first separator token of each share is
+/// then deleted from that share. A share an action cannot
+/// fill, or a token no action takes, leaves the invocation
+/// to the gathered hand off, where the usage refusal answers
+/// at status 2 before any file is read, as it does in the
+/// oracle.
+fn distribute(handback: bool, tokens: &[OsString]) -> Option<Assigned> {
+    let separator = tokens.iter().position(is_separator_token);
+    let head = separator.unwrap_or(tokens.len());
+    if tokens[..head]
+        .iter()
+        .any(|token| !reads_as_plain_argument(token))
+    {
+        return None;
+    }
+    let arguments = tokens.len() - usize::from(separator.is_some());
+    if arguments < 3 || (!handback && arguments != 3) {
+        return None;
+    }
+    let group_of = |count: usize| if handback { count.min(2) } else { count };
+    let mut shares: [Vec<OsString>; 3] = Default::default();
+    let mut seen = 0usize;
+    for (index, token) in tokens.iter().enumerate() {
+        if Some(index) == separator {
+            let target = if seen == 0 { 0 } else { group_of(seen - 1) };
+            shares[target].push(token.clone());
+        } else {
+            shares[group_of(seen)].push(token.clone());
+            seen += 1;
+        }
+    }
+    for share in &mut shares {
+        if let Some(at) = share.iter().position(is_separator_token) {
+            share.remove(at);
+        }
+    }
+    let single = |share: Vec<OsString>, name: &'static str| {
+        if share.len() == 1 {
+            Slot::One(share.into_iter().next().unwrap())
+        } else {
+            Slot::Listed(name)
+        }
+    };
+    let [left, right, rest] = shares;
+    if handback {
+        Some(Assigned::Handback {
+            left: single(left, "the left branch state"),
+            right: single(right, "the right branch state"),
+            records: rest,
+        })
+    } else {
+        Some(Assigned::Stage {
+            left: single(left, "the left branch state"),
+            right: single(right, "the right branch state"),
+            record: single(rest, "the divergence record"),
+        })
+    }
 }
 
 /// Write text to the error stream in one plain write and
@@ -647,21 +1148,59 @@ fn answer_clap_error(error: clap::Error) -> ExitCode {
     }
 }
 
+/// Answer a clap error on the reconcile surface the way
+/// that surface answers it.
+///
+/// The discipline is the one answer_clap_error states,
+/// with the one change the surface carries. Its help text
+/// prints through the reconcile print function, so a
+/// standard output that cannot take the bytes answers at
+/// the status the failure family of XC-29 carries, 120
+/// under a small output and status 2 under a larger one,
+/// with that surface's one error line.
+fn answer_reconcile_clap_error(error: clap::Error) -> ExitCode {
+    if error.use_stderr() {
+        let code = error.exit_code();
+        let text = error.render().to_string();
+        return answer_error_line(&text, code as u8);
+    }
+    let text = error.render().to_string();
+    match print_out_reconcile(text.as_bytes()) {
+        Ok(()) => ExitCode::from(error.exit_code() as u8),
+        Err(failure) => answer_error_line(&format!("error: {failure}\n"), refusal_status(&failure)),
+    }
+}
+
 fn main() -> ExitCode {
     let mut args = std::env::args_os();
     let program = args.next().unwrap_or_else(|| OsString::from("forkdrift"));
     let rest: Vec<OsString> = args.collect();
     let joined = match preprocess(&rest) {
         Preprocess::Run(joined) => joined,
-        Preprocess::FireHelp(subcommand) => {
+        Preprocess::Assigned(assigned) => {
+            return match cmd_assigned(&assigned) {
+                Ok(code) => ExitCode::from(code as u8),
+                Err(error) => {
+                    answer_error_line(&format!("error: {error}\n"), refusal_status(&error))
+                }
+            };
+        }
+        Preprocess::FireHelp(path) => {
             let mut argv = vec![program];
-            if let Some(name) = subcommand {
+            for name in &path {
                 argv.push(OsString::from(name));
             }
             argv.push(OsString::from("--help"));
+            let reconcile_path = path.first().map(String::as_str) == Some("reconcile");
             return match Cli::try_parse_from(argv) {
                 Ok(_) => ExitCode::from(0),
-                Err(error) => answer_clap_error(error),
+                Err(error) => {
+                    if reconcile_path {
+                        answer_reconcile_clap_error(error)
+                    } else {
+                        answer_clap_error(error)
+                    }
+                }
             };
         }
     };
@@ -672,6 +1211,10 @@ fn main() -> ExitCode {
     let outcome = match &cli.command {
         Command::Compare(args) => cmd_compare(args),
         Command::Sweep(args) => cmd_sweep(args),
+        Command::Reconcile(args) => match &args.form {
+            ReconcileForm::Stage(stage) => cmd_stage(stage),
+            ReconcileForm::Handback(handback) => cmd_handback(handback),
+        },
     };
     match outcome {
         Ok(code) => ExitCode::from(code as u8),
@@ -801,10 +1344,15 @@ mod tests {
     /// command, or a command left with no help argument at
     /// all, fails here in the open instead of leaving the
     /// two reads standing behind the parser in silence.
+    ///
+    /// FD-56 amends the collected count this pin asserts
+    /// from three to six, the count of the commands in the
+    /// tree as it stands with the reconcile subcommand and
+    /// its two forms joined.
     #[test]
     fn every_help_short_is_the_letter_h() {
         let shorts = derived_help_shorts();
-        assert_eq!(shorts.len(), 3);
+        assert_eq!(shorts.len(), 6);
         assert!(shorts.iter().all(|short| *short == Some('h')));
     }
 }
