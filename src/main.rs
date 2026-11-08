@@ -710,4 +710,36 @@ mod tests {
     fn root_long_set_is_the_one_help_long() {
         assert_eq!(derived_root_longs(), vec!["--help".to_string()]);
     }
+
+    /// Derive the short of the help argument of the root
+    /// command from the built command, finding the argument
+    /// by its help long in the manner derived_root_longs
+    /// collects the longs of the root command, and standing
+    /// absent where the built command carries no argument
+    /// with the help long.
+    fn derived_root_help_short() -> Option<char> {
+        let mut command = Cli::command();
+        command.build();
+        for arg in command.get_arguments() {
+            if arg.get_long() == Some("help") {
+                return arg.get_short();
+            }
+        }
+        None
+    }
+
+    /// FD-42. The two reads that test the second character
+    /// of a token against the letter h, the short help test
+    /// of reads_as_positional and the short help branch of
+    /// help_read, rest on the help argument of the root
+    /// command carrying the short h. This pin derives that
+    /// short from the built command and asserts it is the
+    /// letter h, so a help short customized to another
+    /// letter, or a root command left with no help argument
+    /// at all, fails here in the open instead of leaving
+    /// the two reads standing behind the parser in silence.
+    #[test]
+    fn root_help_short_is_the_letter_h() {
+        assert_eq!(derived_root_help_short(), Some('h'));
+    }
 }
