@@ -301,15 +301,23 @@ pub fn bundle_divergences(
             }
         }
         for divergence in divergences {
-            let canonical = canonical_divergence(divergence);
+            // The membership question is answered from the one
+            // sorted clone of the rows, the key built from that
+            // clone alone, and the canonical copy of a
+            // divergence is made only when the union takes it,
+            // so a duplicate pays the one clone the question
+            // costs (FD-65).
+            let mut rows = divergence.rows.clone();
+            rows.sort_by_key(printed_row);
             let key = (
-                canonical.interface.clone(),
-                canonical.name.clone(),
-                canonical.kind.clone(),
-                canonical.rows.clone(),
+                divergence.interface.clone(),
+                divergence.name.clone(),
+                divergence.kind.clone(),
+                rows,
             );
-            if seen.insert(key) {
-                union.push(canonical);
+            if !seen.contains(&key) {
+                seen.insert(key);
+                union.push(canonical_divergence(divergence));
             }
         }
     }

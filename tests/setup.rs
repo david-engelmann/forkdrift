@@ -115,9 +115,22 @@ fn the_description_stands_on_every_surface() {
         .expect("the README carries a lede line");
     assert_eq!(lede, DESCRIPTION, "the README lede must be the description");
     let manifest = read_repo("Cargo.toml");
-    assert!(
-        manifest.contains(&format!("description = \"{DESCRIPTION}\"")),
-        "the package description field must be the description"
+    let mut in_package = false;
+    let mut description_lines: Vec<&str> = Vec::new();
+    for line in manifest.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            in_package = trimmed == "[package]";
+            continue;
+        }
+        if in_package && trimmed.starts_with("description") {
+            description_lines.push(line);
+        }
+    }
+    assert_eq!(
+        description_lines,
+        vec![format!("description = \"{DESCRIPTION}\"").as_str()],
+        "the package table must carry exactly one description line, the description"
     );
     let lib = read_repo("src/lib.rs");
     let doc_line = lib.lines().next().expect("the crate carries doc lines");
@@ -127,14 +140,51 @@ fn the_description_stands_on_every_surface() {
         "the first crate doc line must be the description"
     );
     let corpus = read_repo("tests/cli_corpus.json");
-    assert!(
-        corpus.contains(DESCRIPTION),
-        "the corpus root help expectations must carry the description"
-    );
+    let corpus: serde_json::Value =
+        serde_json::from_str(&corpus).expect("the committed corpus parses");
+    let cases = corpus["cases"].as_array().expect("the corpus holds cases");
+    // The ten root help cases that carry the description, each
+    // on the stream its help stands on. The no-args case prints
+    // its help to the error stream and exits at code 2, and the
+    // other nine print theirs to the output stream.
+    let help_cases: [(&str, &str); 10] = [
+        ("no-args", "stderr"),
+        ("help-long", "stdout"),
+        ("help-short", "stdout"),
+        ("help-prefix-he", "stdout"),
+        ("help-prefix-h", "stdout"),
+        ("help-bundle-hx", "stdout"),
+        ("help-bundle-hh", "stdout"),
+        ("unknown-then-help", "stdout"),
+        ("help-then-unknown", "stdout"),
+        ("help-then-bad", "stdout"),
+    ];
+    for (name, stream) in help_cases {
+        let case = cases
+            .iter()
+            .find(|case| case["name"] == name)
+            .unwrap_or_else(|| panic!("the corpus must carry the {name} case"));
+        let text = case["expect"][stream]
+            .as_str()
+            .unwrap_or_else(|| panic!("the {name} case must expect a {stream} text"));
+        let first_line = text
+            .lines()
+            .next()
+            .expect("the help text carries a first line");
+        assert_eq!(
+            first_line, DESCRIPTION,
+            "the {name} case's help must open with the description"
+        );
+    }
     let main = read_repo("src/main.rs");
-    assert!(
-        main.contains(&format!("about = \"{DESCRIPTION}\"")),
-        "the command line about must carry the description"
+    let about_lines: Vec<&str> = main
+        .lines()
+        .filter(|line| line.contains("about = \""))
+        .collect();
+    assert_eq!(
+        about_lines,
+        vec![format!("    about = \"{DESCRIPTION}\",").as_str()],
+        "the command declaration must carry exactly one about line, the description"
     );
 }
 

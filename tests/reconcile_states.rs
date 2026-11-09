@@ -215,6 +215,32 @@ fn values_the_decimal_grammar_refuses_or_leaves_nonfinite_never_agree() {
 }
 
 #[test]
+fn nonfinite_and_refused_values_agree_only_with_their_own_text() {
+    // FD-67. Across differing texts the never equal sentence
+    // of the grammar holds whole, an infinity against a
+    // finite value and against a differently signed infinity
+    // spelling, and a nan against a finite value. Character
+    // for character identical spellings agree by the text arm
+    // ahead of the grammar, as the standing pin records for a
+    // nan spelling and a refused spelling, and as these two
+    // record for an infinity spelling and a plain refused
+    // word.
+    let unequal: [(&str, &str); 3] = [("inf", "1"), ("-inf", "inf"), ("nan", "0")];
+    for (left, right) in unequal {
+        assert!(
+            !values_equal(left, right),
+            "{left:?} should not equal {right:?}"
+        );
+        assert!(
+            !values_equal(right, left),
+            "{right:?} should not equal {left:?}"
+        );
+    }
+    assert!(values_equal("inf", "inf"));
+    assert!(values_equal("abc", "abc"));
+}
+
+#[test]
 fn a_five_thousand_digit_coefficient_compares_exactly() {
     let spelled = format!("1{}", "0".repeat(4999));
     assert!(values_equal(&spelled, "1e4999"));
