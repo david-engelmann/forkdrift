@@ -315,8 +315,7 @@ pub fn bundle_divergences(
                 divergence.kind.clone(),
                 rows,
             );
-            if !seen.contains(&key) {
-                seen.insert(key);
+            if seen.insert(key) {
                 union.push(canonical_divergence(divergence));
             }
         }
