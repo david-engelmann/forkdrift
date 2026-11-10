@@ -1855,21 +1855,29 @@ mod tests {
         assert_walk_run(&["compare", "a", "--", "b"], &["compare", "--", "a", "b"]);
     }
 
-    /// FD-70, the separator arms. A separator standing
-    /// first behind a command hands everything after it
-    /// over as values on the same arm.
+    /// FD-70, the separator arms. A separator behind
+    /// sweep hands the tokens after it over as values on
+    /// the same arm as behind compare, and the value
+    /// ahead of it separates the readings, because the
+    /// blocked stream keeps the separator where it stands
+    /// and the gathered stream moves it ahead of the
+    /// values it joins.
     #[test]
-    fn walk_separator_first_behind_sweep_hands_the_rest_over_as_values() {
-        assert_walk_run(&["sweep", "--", "a", "b"], &["sweep", "--", "a", "b"]);
+    fn walk_separator_behind_sweep_hands_the_rest_over_as_values() {
+        assert_walk_run(&["sweep", "a", "--", "b"], &["sweep", "--", "a", "b"]);
     }
 
     /// FD-70, the separator arms. A second separator behind
     /// a command is itself a value, as the probe
     /// correction to FD-11 records, and it stands in the
-    /// gathered values behind the inserted separator.
+    /// gathered values behind the inserted separator. The
+    /// value ahead of the first separator separates the
+    /// readings, so the pin proves the second separator
+    /// stands as a gathered value and not merely where it
+    /// stood in the raw stream.
     #[test]
     fn walk_second_separator_behind_compare_is_itself_a_value() {
-        assert_walk_run(&["compare", "--", "--"], &["compare", "--", "--"]);
+        assert_walk_run(&["compare", "a", "--", "--"], &["compare", "--", "a", "--"]);
     }
 
     /// FD-70, the gathered handoff. Values gather in order
