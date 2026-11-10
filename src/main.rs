@@ -1839,7 +1839,10 @@ mod tests {
     /// option, the separator standing after it and last.
     #[test]
     fn walk_separator_behind_reconcile_after_an_option_with_an_empty_tail_blocks() {
-        assert_walk_run(&["reconcile", "--bogus", "--"], &["reconcile", "--bogus", "--"]);
+        assert_walk_run(
+            &["reconcile", "--bogus", "--"],
+            &["reconcile", "--bogus", "--"],
+        );
     }
 
     /// FD-70, the separator arms. A separator behind a
