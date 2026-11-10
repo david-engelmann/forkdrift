@@ -1354,4 +1354,754 @@ mod tests {
         assert_eq!(shorts.len(), 6);
         assert!(shorts.iter().all(|short| *short == Some('h')));
     }
+
+    /// Build the token stream a walk pin names from its
+    /// spellings.
+    fn walk_tokens(spellings: &[&str]) -> Vec<OsString> {
+        spellings.iter().map(OsString::from).collect()
+    }
+
+    /// Assert the walk hands the tokens over to the parser
+    /// in exactly the stream the pin names, token for token.
+    fn assert_walk_run(spellings: &[&str], expected: &[&str]) {
+        match preprocess(&walk_tokens(spellings)) {
+            Preprocess::Run(stream) => {
+                let stream: Vec<String> = stream
+                    .iter()
+                    .map(|token| token.to_string_lossy().into_owned())
+                    .collect();
+                let expected: Vec<String> =
+                    expected.iter().map(|token| token.to_string()).collect();
+                assert_eq!(stream, expected);
+            }
+            Preprocess::FireHelp(path) => {
+                panic!("expected a handed over stream, the walk fired help for {path:?}")
+            }
+            Preprocess::Assigned(_) => {
+                panic!("expected a handed over stream, the walk assigned a reconcile form")
+            }
+        }
+    }
+
+    /// Assert the walk fires the help of the parser the
+    /// named command path stands on.
+    fn assert_walk_help(spellings: &[&str], expected: &[&str]) {
+        match preprocess(&walk_tokens(spellings)) {
+            Preprocess::FireHelp(path) => {
+                let expected: Vec<String> = expected.iter().map(|name| name.to_string()).collect();
+                assert_eq!(path, expected);
+            }
+            Preprocess::Run(_) => {
+                panic!("expected a fired help, the walk handed the tokens over")
+            }
+            Preprocess::Assigned(_) => {
+                panic!("expected a fired help, the walk assigned a reconcile form")
+            }
+        }
+    }
+
+    /// Render one distributed slot in the words a walk pin
+    /// asserts against.
+    fn render_slot(slot: &Slot) -> String {
+        match slot {
+            Slot::One(path) => format!("one {}", path.to_string_lossy()),
+            Slot::Listed(name) => format!("listed {name}"),
+        }
+    }
+
+    /// Assert the walk assigns the tokens behind a form to
+    /// the distribution, with the slots and the bundle the
+    /// pin names.
+    fn assert_walk_assigned(spellings: &[&str], expected: &str) {
+        match preprocess(&walk_tokens(spellings)) {
+            Preprocess::Assigned(assigned) => {
+                let rendered = match &assigned {
+                    Assigned::Stage {
+                        left,
+                        right,
+                        record,
+                    } => format!(
+                        "stage {} {} {}",
+                        render_slot(left),
+                        render_slot(right),
+                        render_slot(record)
+                    ),
+                    Assigned::Handback {
+                        left,
+                        right,
+                        records,
+                    } => format!(
+                        "handback {} {} [{}]",
+                        render_slot(left),
+                        render_slot(right),
+                        records
+                            .iter()
+                            .map(|record| record.to_string_lossy().into_owned())
+                            .collect::<Vec<String>>()
+                            .join(", ")
+                    ),
+                };
+                assert_eq!(rendered, expected);
+            }
+            Preprocess::Run(_) => {
+                panic!("expected an assigned form, the walk handed the tokens over")
+            }
+            Preprocess::FireHelp(_) => {
+                panic!("expected an assigned form, the walk fired help")
+            }
+        }
+    }
+
+    /// FD-70, the help reads. The long help token fires the
+    /// root help, because the probe correction to FD-11
+    /// records that a help token fires where the scan
+    /// reaches it.
+    #[test]
+    fn walk_help_long_fires_at_the_root() {
+        assert_walk_help(&["--help"], &[]);
+    }
+
+    /// FD-70, the help reads. A prefix of the help long
+    /// fires the root help, because the long arm matches by
+    /// unique prefix against the table and the root table
+    /// holds the help long alone.
+    #[test]
+    fn walk_help_long_prefix_fires_at_the_root() {
+        assert_walk_help(&["--hel"], &[]);
+    }
+
+    /// FD-70, the help reads. A help long carrying a value
+    /// refuses and blocks the walk, so the help token after
+    /// it cannot fire. The stream stands as the refusal
+    /// leaves it, the token itself and the blocked token
+    /// behind it, where a plain no help reading of the
+    /// first token would let the second one fire.
+    #[test]
+    fn walk_help_long_carrying_a_value_refuses_at_the_root() {
+        assert_walk_run(&["--help=x", "--help"], &["--help=x", "--help"]);
+    }
+
+    /// FD-70, the help reads. A prefix of the help long
+    /// carrying a value refuses on the same terms as the
+    /// full spelling, the match being by prefix before the
+    /// value is read.
+    #[test]
+    fn walk_help_long_prefix_carrying_a_value_refuses_at_the_root() {
+        assert_walk_run(&["--hel=x", "--help"], &["--hel=x", "--help"]);
+    }
+
+    /// FD-70, the help reads. The short help token fires
+    /// the root help.
+    #[test]
+    fn walk_help_short_fires_at_the_root() {
+        assert_walk_help(&["-h"], &[]);
+    }
+
+    /// FD-70, the help reads. A short help token whose
+    /// bundle continues with another letter fires, the two
+    /// continuations that read as a value being the equals
+    /// sign and the dash alone.
+    #[test]
+    fn walk_help_short_bundle_fires_at_the_root() {
+        assert_walk_help(&["-hx"], &[]);
+    }
+
+    /// FD-70, the help reads. A short help token carrying
+    /// a value refuses, and the walk hands the parser the
+    /// rewritten long form of the refusal, so the stream
+    /// carries the long spelling the token never wore. The
+    /// following help token stands blocked behind the
+    /// refusal, where a plain no help reading of the first
+    /// token would let it fire.
+    #[test]
+    fn walk_help_short_carrying_a_value_refuses_at_the_root() {
+        assert_walk_run(&["-h=x", "--help"], &["--help=x", "--help"]);
+    }
+
+    /// FD-70, the help reads. A short help token continuing
+    /// with a dash refuses as a token carrying a value, and
+    /// the rewritten form hands the parser everything
+    /// behind the short letter as that value.
+    #[test]
+    fn walk_help_short_dash_continuation_refuses_at_the_root() {
+        assert_walk_run(&["-h-x", "--help"], &["--help=-x", "--help"]);
+    }
+
+    /// FD-70, the help reads. A help token behind compare
+    /// fires the help of compare, the path naming the
+    /// command the walk stands on.
+    #[test]
+    fn walk_help_fires_behind_compare() {
+        assert_walk_help(&["compare", "--help"], &["compare"]);
+    }
+
+    /// FD-70, the help reads. The short help token behind
+    /// sweep fires the help of sweep.
+    #[test]
+    fn walk_help_short_fires_behind_sweep() {
+        assert_walk_help(&["sweep", "-h"], &["sweep"]);
+    }
+
+    /// FD-70, the help reads. A help token behind reconcile
+    /// before any form stands fires the help of reconcile
+    /// itself, the mid level reading help against the
+    /// reconcile table.
+    #[test]
+    fn walk_help_fires_behind_reconcile() {
+        assert_walk_help(&["reconcile", "--help"], &["reconcile"]);
+    }
+
+    /// FD-70, the help reads. A help token behind the stage
+    /// form fires the help of the form, the path naming
+    /// both levels.
+    #[test]
+    fn walk_help_fires_behind_stage() {
+        assert_walk_help(&["reconcile", "stage", "--help"], &["reconcile", "stage"]);
+    }
+
+    /// FD-70, the help reads. The short help token behind
+    /// the handback form fires the help of the form.
+    #[test]
+    fn walk_help_short_fires_behind_handback() {
+        assert_walk_help(&["reconcile", "handback", "-h"], &["reconcile", "handback"]);
+    }
+
+    /// FD-70, the help reads. A help token fires ahead of a
+    /// value the walk has already gathered, as the probe
+    /// correction to FD-11 records, so the gathered value
+    /// never reaches a handoff.
+    #[test]
+    fn walk_help_fires_ahead_of_a_gathered_value() {
+        assert_walk_help(&["compare", "a", "--help"], &["compare"]);
+    }
+
+    /// FD-70, the help reads. An unknown long at the root
+    /// is only collected, so a help token after it still
+    /// fires.
+    #[test]
+    fn walk_unknown_long_at_the_root_leaves_help_free_to_fire() {
+        assert_walk_help(&["--bogus", "--help"], &[]);
+    }
+
+    /// FD-70, the slot recognition. A word no subcommand
+    /// answers to blocks the walk at the root, and every
+    /// token after it stands in the stream as it stood, the
+    /// help token behind it blocked with the rest.
+    #[test]
+    fn walk_unknown_word_at_the_root_blocks_the_walk() {
+        assert_walk_run(&["bogus", "--help"], &["bogus", "--help"]);
+    }
+
+    /// FD-70, the slot recognition. A mere prefix of a
+    /// command name blocks the walk, because the slot match
+    /// is exact and the abbreviation reading belongs to the
+    /// flags and never to the command names.
+    #[test]
+    fn walk_subcommand_prefix_at_the_root_blocks_the_walk() {
+        assert_walk_run(&["comp", "--help"], &["comp", "--help"]);
+    }
+
+    /// FD-70, the slot recognition. A form name at the root
+    /// blocks the walk, because no form slot stands at the
+    /// top level and the name reads as a positional
+    /// candidate for the subcommand slot.
+    #[test]
+    fn walk_form_name_at_the_root_blocks_the_walk() {
+        assert_walk_run(&["stage", "--help"], &["stage", "--help"]);
+    }
+
+    /// FD-70, the slot recognition. A word the form slot
+    /// cannot take blocks the walk behind reconcile, on the
+    /// root slot's own terms one level down.
+    #[test]
+    fn walk_unknown_word_behind_reconcile_blocks_the_walk() {
+        assert_walk_run(
+            &["reconcile", "bogus", "--help"],
+            &["reconcile", "bogus", "--help"],
+        );
+    }
+
+    /// FD-70, the slot recognition. The reconcile name
+    /// repeated behind itself blocks the walk, the second
+    /// standing as a positional candidate the form slot
+    /// cannot take.
+    #[test]
+    fn walk_reconcile_repeated_behind_itself_blocks_the_walk() {
+        assert_walk_run(
+            &["reconcile", "reconcile", "--help"],
+            &["reconcile", "reconcile", "--help"],
+        );
+    }
+
+    /// FD-70, the slot recognition. An option token at the
+    /// root is collected and the walk goes on, the command
+    /// after it filling its slot and the value after that
+    /// gathering behind the inserted separator.
+    #[test]
+    fn walk_option_at_the_root_is_collected_and_the_walk_goes_on() {
+        assert_walk_run(
+            &["--bogus", "compare", "a"],
+            &["--bogus", "compare", "--", "a"],
+        );
+    }
+
+    /// FD-70, the slot recognition. An option token behind
+    /// reconcile is collected at the mid level, so a help
+    /// token after it fires the help of reconcile.
+    #[test]
+    fn walk_option_behind_reconcile_leaves_help_free_to_fire() {
+        assert_walk_help(&["reconcile", "--bogus", "--help"], &["reconcile"]);
+    }
+
+    /// FD-70, the classification reads. A token carrying a
+    /// space reads as a positional value whatever its
+    /// prefix, as the probe correction to FD-11 records, so
+    /// behind compare it gathers as a value.
+    #[test]
+    fn walk_space_token_reads_as_a_value_behind_compare() {
+        assert_walk_run(
+            &["compare", "-- a.tape", "b"],
+            &["compare", "--", "-- a.tape", "b"],
+        );
+    }
+
+    /// FD-70, the classification reads. The same space
+    /// token at the root reads as a positional candidate
+    /// and blocks the walk, the help token behind it
+    /// blocked with the rest.
+    #[test]
+    fn walk_space_token_at_the_root_blocks_the_walk() {
+        assert_walk_run(&["-- a.tape", "--help"], &["-- a.tape", "--help"]);
+    }
+
+    /// FD-70, the classification reads. A dash token
+    /// carrying a space reads as a value on the same rule,
+    /// its dash opening no option reading.
+    #[test]
+    fn walk_dash_space_token_reads_as_a_value_behind_compare() {
+        assert_walk_run(&["compare", "-x y", "b"], &["compare", "--", "-x y", "b"]);
+    }
+
+    /// FD-70, the classification reads. A token naming a
+    /// negative number in the pattern reads as a value, as
+    /// the probe correction to FD-11 records.
+    #[test]
+    fn walk_negative_number_reads_as_a_value_behind_compare() {
+        assert_walk_run(&["compare", "-1", "b"], &["compare", "--", "-1", "b"]);
+    }
+
+    /// FD-70, the classification reads. A negative fraction
+    /// with digits on both sides of the point reads as a
+    /// value on the same pattern.
+    #[test]
+    fn walk_negative_fraction_reads_as_a_value_behind_compare() {
+        assert_walk_run(&["compare", "-1.5", "b"], &["compare", "--", "-1.5", "b"]);
+    }
+
+    /// FD-70, the classification reads. A negative fraction
+    /// with no digit before the point reads as a value,
+    /// because the digits before the point may stand empty
+    /// in the pattern while those after it may not.
+    #[test]
+    fn walk_negative_leading_dot_reads_as_a_value_behind_compare() {
+        assert_walk_run(&["compare", "-.5", "b"], &["compare", "--", "-.5", "b"]);
+    }
+
+    /// FD-70, the classification reads. A negative number
+    /// carrying one trailing newline reads as a value,
+    /// because the pattern's end anchor forgives exactly
+    /// one trailing newline.
+    #[test]
+    fn walk_negative_number_with_a_trailing_newline_reads_as_a_value() {
+        assert_walk_run(&["compare", "-1\n", "b"], &["compare", "--", "-1\n", "b"]);
+    }
+
+    /// FD-70, the classification reads. A negative spelling
+    /// ending at the point reads as an option and not as a
+    /// value, because the fraction the pattern admits
+    /// after digits and a point still needs a digit of its
+    /// own when the point is read as the fraction's start,
+    /// and the spelling lands in the collected stream
+    /// ahead of the gathered value.
+    #[test]
+    fn walk_negative_trailing_dot_reads_as_an_option_behind_compare() {
+        assert_walk_run(&["compare", "-1.", "b"], &["compare", "-1.", "--", "b"]);
+    }
+
+    /// FD-70, the classification reads. A negative spelling
+    /// carrying an exponent reads as an option, because
+    /// the pattern admits no exponent.
+    #[test]
+    fn walk_negative_exponent_spelling_reads_as_an_option_behind_compare() {
+        assert_walk_run(&["compare", "-1e3", "b"], &["compare", "-1e3", "--", "b"]);
+    }
+
+    /// FD-70, the classification reads. A lone dash reads
+    /// as a value, the one dash token the classification
+    /// names positional outright.
+    #[test]
+    fn walk_lone_dash_reads_as_a_value_behind_compare() {
+        assert_walk_run(&["compare", "-", "b"], &["compare", "--", "-", "b"]);
+    }
+
+    /// FD-70, the classification reads. A token whose long
+    /// name is the two dashes alone, written with an equals
+    /// sign, reads as an option, because the long arm asks
+    /// for a name longer than the dashes before it matches
+    /// anything, and the classification reads a long token
+    /// without a space as an option.
+    #[test]
+    fn walk_double_dash_equals_token_reads_as_an_option_behind_compare() {
+        assert_walk_run(&["compare", "--=x", "a"], &["compare", "--=x", "--", "a"]);
+    }
+
+    /// FD-70, the classification reads. The help family
+    /// letter stands ahead of the space rule in the
+    /// classification read, so a token opening with that
+    /// letter never reads as a positional even when it
+    /// carries a space, while a token opening with any
+    /// other letter reads as one on the space rule. The
+    /// pair brackets the precedence the walk cannot isolate
+    /// through its own outcomes, because the help read
+    /// answers such a token before the classification is
+    /// consulted.
+    #[test]
+    fn positional_read_h_family_stands_ahead_of_the_space_rule() {
+        assert!(!reads_as_positional("-h x"));
+        assert!(reads_as_positional("-x y"));
+    }
+
+    /// FD-70, the classification reads. The decimal digits
+    /// of another script read as digits of the negative
+    /// number pattern, because the pattern's digit set is
+    /// the full Unicode decimal set the oracle's text
+    /// pattern carries.
+    #[test]
+    fn positional_read_unicode_decimal_digits_read_as_a_negative_number() {
+        assert!(reads_as_positional("-\u{661}\u{662}"));
+    }
+
+    /// FD-70, the separator arms. A separator standing
+    /// before any subcommand is read as the subcommand
+    /// candidate itself, as the probe correction to FD-11
+    /// records, and it blocks the walk, the help token
+    /// behind it blocked with the rest.
+    #[test]
+    fn walk_separator_at_the_root_blocks_the_walk() {
+        assert_walk_run(&["--", "--help"], &["--", "--help"]);
+    }
+
+    /// FD-70, the separator arms. A separator behind
+    /// reconcile before any form stands blocks the walk on
+    /// the same candidate reading one level down, and the
+    /// form name behind it never routes.
+    #[test]
+    fn walk_separator_behind_reconcile_blocks_the_walk() {
+        assert_walk_run(
+            &["reconcile", "--", "stage", "a"],
+            &["reconcile", "--", "stage", "a"],
+        );
+    }
+
+    /// FD-70, the separator arms. A separator behind a
+    /// command is consumed where it stands and hands the
+    /// tokens after it over as values, so the value before
+    /// it and the value after it gather together behind
+    /// the one inserted separator of the handoff.
+    #[test]
+    fn walk_separator_behind_compare_hands_the_rest_over_as_values() {
+        assert_walk_run(&["compare", "a", "--", "b"], &["compare", "--", "a", "b"]);
+    }
+
+    /// FD-70, the separator arms. A separator standing
+    /// first behind a command hands everything after it
+    /// over as values on the same arm.
+    #[test]
+    fn walk_separator_first_behind_sweep_hands_the_rest_over_as_values() {
+        assert_walk_run(&["sweep", "--", "a", "b"], &["sweep", "--", "a", "b"]);
+    }
+
+    /// FD-70, the separator arms. A second separator behind
+    /// a command is itself a value, as the probe
+    /// correction to FD-11 records, and it stands in the
+    /// gathered values behind the inserted separator.
+    #[test]
+    fn walk_second_separator_behind_compare_is_itself_a_value() {
+        assert_walk_run(&["compare", "--", "--"], &["compare", "--", "--"]);
+    }
+
+    /// FD-70, the gathered handoff. Values gather in order
+    /// behind the one separator the handoff inserts, and a
+    /// collected option stands ahead of that separator in
+    /// the stream.
+    #[test]
+    fn walk_values_gather_behind_the_inserted_separator() {
+        assert_walk_run(
+            &["compare", "--bogus", "a", "b"],
+            &["compare", "--bogus", "--", "a", "b"],
+        );
+    }
+
+    /// FD-70, the gathered handoff. A stream with no
+    /// gathered value carries no separator into the
+    /// handoff, the insertion standing only where a value
+    /// stands.
+    #[test]
+    fn walk_no_values_carry_no_separator_into_the_handoff() {
+        assert_walk_run(&["compare", "--bogus"], &["compare", "--bogus"]);
+    }
+
+    /// FD-70, the gathered handoff. The empty stream runs
+    /// as an empty handoff.
+    #[test]
+    fn walk_empty_stream_runs_as_an_empty_handoff() {
+        assert_walk_run(&[], &[]);
+    }
+
+    /// FD-70, the gathered handoff. Values keep their order
+    /// across an option collected between them, the option
+    /// moving ahead of the inserted separator and the
+    /// values standing in the order they were gathered.
+    #[test]
+    fn walk_values_keep_their_order_across_a_collected_option() {
+        assert_walk_run(
+            &["sweep", "a", "--bogus", "b"],
+            &["sweep", "--bogus", "--", "a", "b"],
+        );
+    }
+
+    /// FD-70, the reconcile routing. The stage form with
+    /// its three values and no option collected on any
+    /// level goes through the distribution, each value
+    /// filling its own slot.
+    #[test]
+    fn walk_stage_form_distributes_its_three_values() {
+        assert_walk_assigned(
+            &["reconcile", "stage", "a", "b", "c"],
+            "stage one a one b one c",
+        );
+    }
+
+    /// FD-70, the reconcile routing. The handback form
+    /// distributes its values with the first two filling
+    /// the branch state slots and the rest standing in the
+    /// bundle.
+    #[test]
+    fn walk_handback_form_distributes_its_values() {
+        assert_walk_assigned(
+            &["reconcile", "handback", "a", "b", "c", "d"],
+            "handback one a one b [c, d]",
+        );
+    }
+
+    /// FD-70, the reconcile routing. An option token
+    /// collected at the root vetoes the distribution, so
+    /// the same three values behind the form gather into
+    /// the handoff instead, the veto standing at the gate
+    /// because the distribution never sees the root token.
+    #[test]
+    fn walk_root_option_vetoes_the_distribution() {
+        assert_walk_run(
+            &["--bogus", "reconcile", "stage", "a", "b", "c"],
+            &["--bogus", "reconcile", "stage", "--", "a", "b", "c"],
+        );
+    }
+
+    /// FD-70, the reconcile routing. An option token
+    /// collected behind reconcile vetoes the distribution
+    /// on the same terms, the token standing ahead of the
+    /// form token in the stream the distribution reads
+    /// from.
+    #[test]
+    fn walk_reconcile_option_vetoes_the_distribution() {
+        assert_walk_run(
+            &["reconcile", "--bogus", "stage", "a", "b", "c"],
+            &["reconcile", "--bogus", "stage", "--", "a", "b", "c"],
+        );
+    }
+
+    /// FD-70, the reconcile routing. An option token
+    /// collected behind the form keeps the gathered
+    /// handoff. The gate's veto and the distribution's own
+    /// plain argument head check both refuse this shape,
+    /// the joint coverage the census of FD-69 records, and
+    /// the gate mutation of FD-71 demonstrates the overlap
+    /// by leaving this pin standing.
+    #[test]
+    fn walk_form_option_keeps_the_gathered_handoff() {
+        assert_walk_run(
+            &["reconcile", "stage", "a", "--bogus", "b", "c"],
+            &["reconcile", "stage", "--bogus", "--", "a", "b", "c"],
+        );
+    }
+
+    /// FD-70, the reconcile routing. A form asked for too
+    /// few values keeps the gathered handoff, because the
+    /// distribution's assignment must be complete and two
+    /// values fill no three slots.
+    #[test]
+    fn walk_too_few_values_behind_a_form_keep_the_gathered_handoff() {
+        assert_walk_run(
+            &["reconcile", "stage", "a", "b"],
+            &["reconcile", "stage", "--", "a", "b"],
+        );
+    }
+
+    /// FD-70, the reconcile routing. A stage form asked for
+    /// one value too many keeps the gathered handoff,
+    /// because the stage assignment takes exactly three
+    /// values and the fourth has no slot.
+    #[test]
+    fn walk_extra_value_behind_stage_keeps_the_gathered_handoff() {
+        assert_walk_run(
+            &["reconcile", "stage", "a", "b", "c", "d"],
+            &["reconcile", "stage", "--", "a", "b", "c", "d"],
+        );
+    }
+
+    /// FD-70, the distribution. A separator after the first
+    /// value joins the share of that value and is deleted
+    /// from it, so each value still fills its own slot.
+    #[test]
+    fn walk_distribution_separator_after_the_first_value() {
+        assert_walk_assigned(
+            &["reconcile", "stage", "a", "--", "b", "c"],
+            "stage one a one b one c",
+        );
+    }
+
+    /// FD-70, the distribution. A separator leading the
+    /// values joins the first share and is deleted from
+    /// it, so the assignment stands as it stands with no
+    /// separator at all.
+    #[test]
+    fn walk_distribution_separator_leading() {
+        assert_walk_assigned(
+            &["reconcile", "stage", "--", "a", "b", "c"],
+            "stage one a one b one c",
+        );
+    }
+
+    /// FD-70, the distribution. A separator after the last
+    /// value joins the share of that value and is deleted
+    /// from it, on the same arm at the stream's end.
+    #[test]
+    fn walk_distribution_separator_after_the_last_value() {
+        assert_walk_assigned(
+            &["reconcile", "stage", "a", "b", "c", "--"],
+            "stage one a one b one c",
+        );
+    }
+
+    /// FD-70, the distribution. A second separator behind
+    /// the first is itself a value of the share it lands
+    /// in, and the deletion of that share's first separator
+    /// takes the value with it, leaving the right branch
+    /// state slot of a stage form holding a list.
+    #[test]
+    fn walk_distribution_second_separator_lists_the_right_state_in_a_stage() {
+        assert_walk_assigned(
+            &["reconcile", "stage", "a", "--", "--", "b"],
+            "stage one a listed the right branch state one b",
+        );
+    }
+
+    /// FD-70, the distribution. The same second separator
+    /// landing in the last share leaves the divergence
+    /// record slot of a stage form holding a list.
+    #[test]
+    fn walk_distribution_second_separator_lists_the_record_in_a_stage() {
+        assert_walk_assigned(
+            &["reconcile", "stage", "a", "b", "--", "--"],
+            "stage one a one b listed the divergence record",
+        );
+    }
+
+    /// FD-70, the distribution. The second separator leaves
+    /// the right branch state slot of a handback form
+    /// holding a list on the same arm, the bundle behind
+    /// it standing whole.
+    #[test]
+    fn walk_distribution_second_separator_lists_the_right_state_in_a_handback() {
+        assert_walk_assigned(
+            &["reconcile", "handback", "a", "--", "--", "b", "c"],
+            "handback one a listed the right branch state [b, c]",
+        );
+    }
+
+    /// FD-70, the distribution. Two trailing separators
+    /// leave the handback bundle empty, the first joining
+    /// the share of the value before it and the second
+    /// standing as the bundle share's only token and
+    /// falling to that share's deletion.
+    #[test]
+    fn walk_distribution_trailing_separators_leave_the_bundle_empty() {
+        assert_walk_assigned(
+            &["reconcile", "handback", "a", "b", "--", "--"],
+            "handback one a one b []",
+        );
+    }
+
+    /// FD-70, the distribution. A separator inside the
+    /// bundle's span joins the share of the branch state
+    /// before it under the handback grouping, and the
+    /// bundle behind it stands whole.
+    #[test]
+    fn walk_distribution_separator_inside_the_bundle_share() {
+        assert_walk_assigned(
+            &["reconcile", "handback", "a", "b", "--", "c", "d"],
+            "handback one a one b [c, d]",
+        );
+    }
+
+    /// FD-70, the distribution. Two leading separators
+    /// leave one separator standing as the left value,
+    /// because the deletion takes only the first separator
+    /// of the share and the second stands as a value token
+    /// the share received.
+    #[test]
+    fn walk_distribution_leading_separators_leave_one_separator_as_the_left_value() {
+        assert_walk_assigned(
+            &["reconcile", "handback", "--", "--", "a", "b", "c"],
+            "handback one -- one a [b, c]",
+        );
+    }
+
+    /// FD-70, the distribution. A token carrying a space
+    /// fills a slot as a plain argument, the distribution
+    /// reading it under its own space rule where the walk
+    /// gathered it as a value.
+    #[test]
+    fn walk_distribution_space_token_fills_a_slot() {
+        assert_walk_assigned(
+            &["reconcile", "stage", "-x y", "a", "b"],
+            "stage one -x y one a one b",
+        );
+    }
+
+    /// FD-70, the distribution. A negative number fills a
+    /// slot as a plain argument on the same terms, the
+    /// distribution's plain argument read resting on the
+    /// same negative number pattern as the walk's
+    /// classification.
+    #[test]
+    fn walk_distribution_negative_number_fills_a_slot() {
+        assert_walk_assigned(
+            &["reconcile", "stage", "-1", "a", "b"],
+            "stage one -1 one a one b",
+        );
+    }
+
+    /// FD-70, the distribution. Two separators behind a
+    /// stage form with values between them make the count
+    /// one the stage assignment cannot take, so the whole
+    /// stream keeps the gathered handoff, the separators
+    /// standing among the gathered values.
+    #[test]
+    fn walk_two_separators_behind_a_stage_keep_the_gathered_handoff() {
+        assert_walk_run(
+            &["reconcile", "stage", "a", "--", "b", "--", "c"],
+            &["reconcile", "stage", "--", "a", "b", "--", "c"],
+        );
+    }
 }
