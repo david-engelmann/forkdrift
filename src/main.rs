@@ -1803,6 +1803,45 @@ mod tests {
         );
     }
 
+    /// FD-70, the separator arms. A separator standing
+    /// last at the root, its tail empty, blocks the walk
+    /// and stands in the handed over stream. The gathered
+    /// handoff inserts no separator of its own where no
+    /// value stands, so a reading that handed the tokens
+    /// after a separator over as values would drop this
+    /// separator and answer the empty stream, and the two
+    /// arms separate on the empty tail though they
+    /// coincide on every tail that carries a token.
+    #[test]
+    fn walk_separator_at_the_root_with_an_empty_tail_blocks_the_walk() {
+        assert_walk_run(&["--"], &["--"]);
+    }
+
+    /// FD-70, the separator arms. The same empty tail
+    /// separation behind a collected option at the root,
+    /// the separator standing after it and last.
+    #[test]
+    fn walk_separator_at_the_root_after_an_option_with_an_empty_tail_blocks() {
+        assert_walk_run(&["--bogus", "--"], &["--bogus", "--"]);
+    }
+
+    /// FD-70, the separator arms. A separator standing
+    /// last behind reconcile before any form stands, its
+    /// tail empty, blocks the walk on the same separation
+    /// one level down.
+    #[test]
+    fn walk_separator_behind_reconcile_with_an_empty_tail_blocks_the_walk() {
+        assert_walk_run(&["reconcile", "--"], &["reconcile", "--"]);
+    }
+
+    /// FD-70, the separator arms. The same empty tail
+    /// separation behind reconcile behind a collected
+    /// option, the separator standing after it and last.
+    #[test]
+    fn walk_separator_behind_reconcile_after_an_option_with_an_empty_tail_blocks() {
+        assert_walk_run(&["reconcile", "--bogus", "--"], &["reconcile", "--bogus", "--"]);
+    }
+
     /// FD-70, the separator arms. A separator behind a
     /// command is consumed where it stands and hands the
     /// tokens after it over as values, so the value before
