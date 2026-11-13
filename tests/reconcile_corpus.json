@@ -4058,6 +4058,214 @@
           "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
         }
       }
+    },
+    {
+      "name": "stage-kind-mismatch-conflicts",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\nstore = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\noperation store = ack\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: none\nconflicting: store\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\nstore = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\noperation store = ack\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-partial-kinds-conflict",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation timeout = go\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: none\nconflicting: timeout\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation timeout = go\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-both-kinds-clean",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation timeout = go\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\noperation timeout = go\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation timeout = go\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\noperation timeout = go\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-one-kind-differs-conflicts",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation timeout = go\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\noperation timeout = halt\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: none\nconflicting: timeout\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation timeout = go\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\noperation timeout = halt\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-reported-name-missing-and-defined",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store ghost term-value\n  left (run-a.tape) ghost = 1\n  right (run-b.tape) ghost = 2\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: none\nmissing: ghost\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store ghost term-value\n  left (run-a.tape) ghost = 1\n  right (run-b.tape) ghost = 2\n"
+        }
+      }
+    },
+    {
+      "name": "stage-one-sided-both-forms",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\ncache = on\noperation cache = warm\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: cache (left only)\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\ncache = on\noperation cache = warm\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-states-interface-mismatch",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\n",
+        "R.state": "interface other-store\nauthor engineer-b\n\ntimeout = 30\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: branch states name different interfaces, L.state names shard-store and R.state names other-store\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\n",
+          "R.state": "interface other-store\nauthor engineer-b\n\ntimeout = 30\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-record-interface-mismatch",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+        "rec.txt": "divergence other-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: the divergence record names a different interface, the branch states name shard-store and the record names other-store\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+          "rec.txt": "divergence other-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+        }
+      }
     }
   ]
 }
