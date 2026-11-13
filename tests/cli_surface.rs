@@ -26,8 +26,8 @@ use std::path::{Path, PathBuf};
 use common::{run_cli, temp_dir};
 use serde_json::Value;
 
-const EXPECTED_CASES: usize = 105;
-const EXPECTED_ORACLE_CASES: usize = 46;
+const EXPECTED_CASES: usize = 111;
+const EXPECTED_ORACLE_CASES: usize = 52;
 const EXPECTED_CLAP_CASES: usize = 59;
 
 fn string(value: &Value) -> &str {
