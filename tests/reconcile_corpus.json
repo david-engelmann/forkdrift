@@ -4614,8 +4614,8 @@
       "setup": {
         "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlegacy-mode = off\nbreaking legacy-mode\n",
         "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\n",
-        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-b.tape) legacy-mode = on\n",
-        "rec2.txt": "divergence shard-store legacy-mode excluded-but-defined\n  right (run-b.tape) legacy-mode = on\n  left (run-a.tape) excludes = legacy-mode\n"
+        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  right (run-b.tape) legacy-mode = on\n  left (run-a.tape) excludes = legacy-mode\n",
+        "rec2.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-b.tape) legacy-mode = on\n"
       },
       "argv": [
         "reconcile",
@@ -4632,8 +4632,8 @@
         "files": {
           "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlegacy-mode = off\nbreaking legacy-mode\n",
           "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\n",
-          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-b.tape) legacy-mode = on\n",
-          "rec2.txt": "divergence shard-store legacy-mode excluded-but-defined\n  right (run-b.tape) legacy-mode = on\n  left (run-a.tape) excludes = legacy-mode\n"
+          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  right (run-b.tape) legacy-mode = on\n  left (run-a.tape) excludes = legacy-mode\n",
+          "rec2.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-b.tape) legacy-mode = on\n"
         }
       }
     },
