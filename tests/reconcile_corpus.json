@@ -5064,6 +5064,162 @@
           "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n"
         }
       }
+    },
+    {
+      "name": "record-presence-interface-left",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) interface shard-store\n  right (run-b.tape) cache-ttl = 300\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "task shard-store cache-ttl\nauthors engineer-a engineer-b\nkind presence\n  left (run-a.tape) interface shard-store\n  right (run-b.tape) cache-ttl = 300\nsize small score 1\nfactors definitions 1, result-type no, breaking no\nstaging clean 1, conflicting 1, one-sided 0, missing 1\n",
+        "stderr": "",
+        "files": {
+          "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) interface shard-store\n  right (run-b.tape) cache-ttl = 300\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n"
+        }
+      }
+    },
+    {
+      "name": "record-presence-interface-left-operation",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) interface shard-store\n  right (run-b.tape) operation cache-ttl = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "task shard-store cache-ttl\nauthors engineer-a engineer-b\nkind presence\n  left (run-a.tape) interface shard-store\n  right (run-b.tape) operation cache-ttl = ack\nsize medium score 3\nfactors definitions 1, result-type yes, breaking no\nstaging clean 1, conflicting 1, one-sided 0, missing 1\n",
+        "stderr": "",
+        "files": {
+          "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) interface shard-store\n  right (run-b.tape) operation cache-ttl = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n"
+        }
+      }
+    },
+    {
+      "name": "record-presence-split-forms",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n  right (run-b.tape) operation cache-ttl = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "task shard-store cache-ttl\nauthors engineer-a engineer-b\nkind presence\n  left (run-a.tape) cache-ttl = 300\n  right (run-b.tape) operation cache-ttl = ack\nsize medium score 4\nfactors definitions 2, result-type yes, breaking no\nstaging clean 1, conflicting 1, one-sided 0, missing 1\n",
+        "stderr": "",
+        "files": {
+          "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n  right (run-b.tape) operation cache-ttl = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n"
+        }
+      }
+    },
+    {
+      "name": "record-presence-two-forms-left",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n  right (run-b.tape) interface shard-store\n  left (run-a.tape) operation cache-ttl = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "task shard-store cache-ttl\nauthors engineer-a engineer-b\nkind presence\n  left (run-a.tape) cache-ttl = 300\n  left (run-a.tape) operation cache-ttl = ack\n  right (run-b.tape) interface shard-store\nsize medium score 4\nfactors definitions 2, result-type yes, breaking no\nstaging clean 1, conflicting 1, one-sided 0, missing 1\n",
+        "stderr": "",
+        "files": {
+          "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n  right (run-b.tape) interface shard-store\n  left (run-a.tape) operation cache-ttl = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n"
+        }
+      }
+    },
+    {
+      "name": "record-presence-two-forms-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) interface shard-store\n  right (run-b.tape) cache-ttl = 300\n  right (run-b.tape) operation cache-ttl = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "task shard-store cache-ttl\nauthors engineer-a engineer-b\nkind presence\n  left (run-a.tape) interface shard-store\n  right (run-b.tape) cache-ttl = 300\n  right (run-b.tape) operation cache-ttl = ack\nsize medium score 4\nfactors definitions 2, result-type yes, breaking no\nstaging clean 1, conflicting 1, one-sided 0, missing 1\n",
+        "stderr": "",
+        "files": {
+          "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) interface shard-store\n  right (run-b.tape) cache-ttl = 300\n  right (run-b.tape) operation cache-ttl = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n"
+        }
+      }
+    },
+    {
+      "name": "record-presence-operation-term-split",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) operation cache-ttl = ack\n  right (run-b.tape) cache-ttl = 300\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "task shard-store cache-ttl\nauthors engineer-a engineer-b\nkind presence\n  left (run-a.tape) operation cache-ttl = ack\n  right (run-b.tape) cache-ttl = 300\nsize medium score 4\nfactors definitions 2, result-type yes, breaking no\nstaging clean 1, conflicting 1, one-sided 0, missing 1\n",
+        "stderr": "",
+        "files": {
+          "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) operation cache-ttl = ack\n  right (run-b.tape) cache-ttl = 300\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n"
+        }
+      }
     }
   ]
 }
