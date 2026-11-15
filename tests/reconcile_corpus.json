@@ -5382,6 +5382,162 @@
           "rec.txt": "divergence shard-store cache term-value\n  left (run-a.tape) cache = 300\n  right (run-b.tape) cache = 450\n\ndivergence shard-store cache presence\n  left (run-a.tape) operation cache = on\n  right (run-b.tape) interface shard-store\n"
         }
       }
+    },
+    {
+      "name": "stage-all-four-lists",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlimit = 10\ncache = on\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\nlimit = 99\nretry = 3\n",
+        "rec.txt": "divergence shard-store ghost term-value\n  left (run-a.tape) ghost = 1\n  right (run-b.tape) ghost = 2\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: limit\none-sided: cache (left only), retry (right only)\nmissing: ghost\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlimit = 10\ncache = on\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\nlimit = 99\nretry = 3\n",
+          "rec.txt": "divergence shard-store ghost term-value\n  left (run-a.tape) ghost = 1\n  right (run-b.tape) ghost = 2\n"
+        }
+      }
+    },
+    {
+      "name": "stage-one-sided-interleaved",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\nbeta = 1\ndelta = 2\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\nalpha = 1\ngamma = 3\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: none\nconflicting: none\none-sided: alpha (right only), beta (left only), delta (left only), gamma (right only)\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\nbeta = 1\ndelta = 2\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\nalpha = 1\ngamma = 3\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-conflicting-and-one-sided",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\nlimit = 10\ncache = on\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\nlimit = 99\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: none\nconflicting: limit\none-sided: cache (left only)\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\nlimit = 10\ncache = on\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\nlimit = 99\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-missing-names-sorted",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+        "rec.txt": "divergence shard-store zebra term-value\n  left (run-a.tape) zebra = 1\n  right (run-b.tape) zebra = 2\ndivergence shard-store apple term-value\n  left (run-a.tape) apple = 3\n  right (run-b.tape) apple = 4\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: none\nmissing: apple, zebra\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+          "rec.txt": "divergence shard-store zebra term-value\n  left (run-a.tape) zebra = 1\n  right (run-b.tape) zebra = 2\ndivergence shard-store apple term-value\n  left (run-a.tape) apple = 3\n  right (run-b.tape) apple = 4\n"
+        }
+      }
+    },
+    {
+      "name": "stage-no-definitions-with-report",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\n",
+        "rec.txt": "divergence shard-store ghost term-value\n  left (run-a.tape) ghost = 1\n  right (run-b.tape) ghost = 2\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: none\nconflicting: none\none-sided: none\nmissing: ghost\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\n",
+          "rec.txt": "divergence shard-store ghost term-value\n  left (run-a.tape) ghost = 1\n  right (run-b.tape) ghost = 2\n"
+        }
+      }
+    },
+    {
+      "name": "stage-one-sided-split-kinds",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ncache = on\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\noperation queue = warm\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: none\nconflicting: none\none-sided: cache (left only), queue (right only)\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ncache = on\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\noperation queue = warm\n",
+          "rec.txt": ""
+        }
+      }
     }
   ]
 }
