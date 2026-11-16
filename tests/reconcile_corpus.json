@@ -5961,7 +5961,7 @@
       "setup": {
         "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
         "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
-        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-c.tape) timeout = 45\na stray line\n"
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store latency term-value\n  left (run-a.tape) latency = 5\n  right (run-c.tape) latency = 9\na stray line\n"
       },
       "argv": [
         "reconcile",
@@ -5973,11 +5973,11 @@
       "expect": {
         "code": 2,
         "stdout": "",
-        "stderr": "error: rec.txt is malformed, line 4 matches no form in a divergence record, a stray line\n",
+        "stderr": "error: rec.txt is malformed, line 7 matches no form in a divergence record, a stray line\n",
         "files": {
           "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
           "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
-          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-c.tape) timeout = 45\na stray line\n"
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store latency term-value\n  left (run-a.tape) latency = 5\n  right (run-c.tape) latency = 9\na stray line\n"
         }
       }
     },
