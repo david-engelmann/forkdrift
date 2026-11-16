@@ -5699,7 +5699,7 @@
       "name": "handback-state-empty-value-before-duplicate",
       "source": "oracle",
       "setup": {
-        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout =\ntimeout = 45\n",
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlimit =\ntimeout = 45\n",
         "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
         "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
       },
@@ -5713,9 +5713,9 @@
       "expect": {
         "code": 2,
         "stdout": "",
-        "stderr": "error: L.state is malformed, line 4 states an empty value\n",
+        "stderr": "error: L.state is malformed, line 5 states an empty value\n",
         "files": {
-          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout =\ntimeout = 45\n",
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlimit =\ntimeout = 45\n",
           "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
           "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
         }
