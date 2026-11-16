@@ -5564,6 +5564,162 @@
           "rec.txt": ""
         }
       }
+    },
+    {
+      "name": "handback-state-author-before-second-interface",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\nauthor late-role\ninterface other-store\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: L.state is malformed, author line out of place at line 4, the author line is the second meaningful line\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\nauthor late-role\ninterface other-store\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+        }
+      }
+    },
+    {
+      "name": "handback-state-duplicate-before-author-line",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\ntimeout = 45\nauthor late-role\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: L.state is malformed, duplicate term name timeout at line 5\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\ntimeout = 45\nauthor late-role\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+        }
+      }
+    },
+    {
+      "name": "handback-state-duplicate-before-breaking-undefined",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\nbreaking ghost\ntimeout = 30\ntimeout = 45\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: L.state is malformed, duplicate term name timeout at line 6\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\nbreaking ghost\ntimeout = 30\ntimeout = 45\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+        }
+      }
+    },
+    {
+      "name": "handback-state-second-line-is-interface",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\ninterface other-store\ntimeout = 30\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: L.state is malformed, missing author line, line 2 does not name an author role\n",
+        "files": {
+          "L.state": "interface shard-store\ninterface other-store\ntimeout = 30\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+        }
+      }
+    },
+    {
+      "name": "handback-state-duplicate-breaking-before-undefined",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\nbreaking ghost\nbreaking ghost\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: L.state is malformed, duplicate breaking line for ghost at line 5\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\nbreaking ghost\nbreaking ghost\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+        }
+      }
+    },
+    {
+      "name": "handback-state-empty-value-before-duplicate",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout =\ntimeout = 45\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: L.state is malformed, line 4 states an empty value\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout =\ntimeout = 45\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\n"
+        }
+      }
     }
   ]
 }
