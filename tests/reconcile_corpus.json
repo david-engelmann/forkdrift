@@ -6194,6 +6194,162 @@
           "rec.txt": ""
         }
       }
+    },
+    {
+      "name": "stage-label-left-invisible",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlabel mode = draft\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlabel mode = draft\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-labels-differ-invisible",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlabel mode = draft\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\nlabel mode = final\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlabel mode = draft\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\nlabel mode = final\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-label-reported-missing",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlabel mode = draft\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\nlabel mode = draft\n",
+        "rec.txt": "divergence shard-store mode term-value\n  left (run-a.tape) mode = draft\n  right (run-b.tape) mode = final\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: none\nmissing: mode\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nlabel mode = draft\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\nlabel mode = draft\n",
+          "rec.txt": "divergence shard-store mode term-value\n  left (run-a.tape) mode = draft\n  right (run-b.tape) mode = final\n"
+        }
+      }
+    },
+    {
+      "name": "stage-excluded-name-classifies",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nexcludes = legacy\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\nlegacy = on\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: legacy (right only)\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nexcludes = legacy\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\nlegacy = on\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-breaking-name-clean",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nbreaking timeout\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\nbreaking timeout\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-term-against-label",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\nstore = mem\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\nlabel store = mem\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: none\nconflicting: none\none-sided: store (left only)\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\nstore = mem\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\nlabel store = mem\n",
+          "rec.txt": ""
+        }
+      }
     }
   ]
 }
