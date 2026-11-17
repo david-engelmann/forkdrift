@@ -6038,6 +6038,162 @@
           "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store latency term-value\n  left (run-a.tape) latency = 5\n  right (run-c.tape) latency = 9\ndivergence shard-store legacy-mode mystery-kind\n  left (run-a.tape) legacy-mode = on\n  right (run-b.tape) legacy-mode = off\n"
         }
       }
+    },
+    {
+      "name": "stage-value-signed-clean",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = +30\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = +30\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-value-dot-forms-clean",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\nlimit = .5\ntimeout = 5.\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\nlimit = 0.5\ntimeout = 5\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: limit, timeout\nconflicting: none\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\nlimit = .5\ntimeout = 5.\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\nlimit = 0.5\ntimeout = 5\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-value-underscore-exponent-clean",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 1e1_0\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 10000000000\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 1e1_0\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 10000000000\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-value-arabic-digits-clean",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = ٣٠\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: timeout\nconflicting: none\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = ٣٠\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 30\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-value-long-coefficient-conflicts",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\nlimit = 1234567890123456789012345678901234567890\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\nlimit = 1234567890123456789012345678901234567891\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: none\nconflicting: limit\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\nlimit = 1234567890123456789012345678901234567890\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\nlimit = 1234567890123456789012345678901234567891\n",
+          "rec.txt": ""
+        }
+      }
+    },
+    {
+      "name": "stage-value-exponent-at-cap-clean",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\nlimit = 1e999999999999999999\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\nlimit = 10e999999999999999998\n",
+        "rec.txt": ""
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 0,
+        "stdout": "interface shard-store\nauthors engineer-a engineer-b\nclean: limit\nconflicting: none\none-sided: none\nmissing: none\n",
+        "stderr": "",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\nlimit = 1e999999999999999999\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\nlimit = 10e999999999999999998\n",
+          "rec.txt": ""
+        }
+      }
     }
   ]
 }
