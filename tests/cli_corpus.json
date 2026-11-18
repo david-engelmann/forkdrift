@@ -2767,6 +2767,30 @@
           "bad.tape": "interface shard-store\ntimeout = 30\nexcludes = legacy-mode\nexcludes = 9bad\n"
         }
       }
+    },
+    {
+      "name": "compare-malformed-left-beside-missing-right",
+      "source": "oracle",
+      "setup": {
+        "a.tape": "interface shard-store\n\ntimeout = 30\n",
+        "b.tape": "interface shard-store\n\ntimeout = 45\n",
+        "bad.tape": "interface shard-store\noperation fetch = record\noperation fetch = receipt\n"
+      },
+      "argv": [
+        "compare",
+        "bad.tape",
+        "missing.tape"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: bad.tape is malformed, duplicate operation name fetch at line 3\n",
+        "files": {
+          "a.tape": "interface shard-store\n\ntimeout = 30\n",
+          "b.tape": "interface shard-store\n\ntimeout = 45\n",
+          "bad.tape": "interface shard-store\noperation fetch = record\noperation fetch = receipt\n"
+        }
+      }
     }
   ]
 }
