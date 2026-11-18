@@ -2743,6 +2743,30 @@
           "bad2.tape": "interface shard-store\ntimeout =\n"
         }
       }
+    },
+    {
+      "name": "compare-malformed-second-excludes-bad-identifier",
+      "source": "oracle",
+      "setup": {
+        "a.tape": "interface shard-store\n\ntimeout = 30\n",
+        "b.tape": "interface shard-store\n\ntimeout = 45\n",
+        "bad.tape": "interface shard-store\ntimeout = 30\nexcludes = legacy-mode\nexcludes = 9bad\n"
+      },
+      "argv": [
+        "compare",
+        "bad.tape",
+        "b.tape"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: bad.tape is malformed, more than one excludes line, second one at line 4\n",
+        "files": {
+          "a.tape": "interface shard-store\n\ntimeout = 30\n",
+          "b.tape": "interface shard-store\n\ntimeout = 45\n",
+          "bad.tape": "interface shard-store\ntimeout = 30\nexcludes = legacy-mode\nexcludes = 9bad\n"
+        }
+      }
     }
   ]
 }
