@@ -2939,56 +2939,79 @@
       }
     },
     {
-      "name": "sweep-malformed-baseline",
+      "name": "compare-malformed-right-no-interface",
       "source": "oracle",
       "setup": {
         "a.tape": "interface shard-store\n\ntimeout = 30\n",
         "b.tape": "interface shard-store\n\ntimeout = 45\n",
-        "bad.tape": "# a note\n\n"
+        "bad.tape": "timeout = 30\n"
       },
       "argv": [
-        "sweep",
-        "bad.tape",
-        "b.tape",
-        "a.tape"
+        "compare",
+        "a.tape",
+        "bad.tape"
       ],
       "expect": {
         "code": 2,
         "stdout": "",
-        "stderr": "error: bad.tape is malformed, missing interface line, the artifact holds no meaningful line\n",
+        "stderr": "error: bad.tape is malformed, missing interface line, line 1 does not name an interface\n",
         "files": {
-          "a.tape": "interface shard-store\n\ntimeout = 30\n",
+          "bad.tape": "timeout = 30\n",
           "b.tape": "interface shard-store\n\ntimeout = 45\n",
-          "bad.tape": "# a note\n\n"
+          "a.tape": "interface shard-store\n\ntimeout = 30\n"
         }
       }
     },
     {
-      "name": "sweep-baseline-refusal-beside-missing-other",
+      "name": "compare-malformed-right-no-statement-form",
       "source": "oracle",
       "setup": {
         "a.tape": "interface shard-store\n\ntimeout = 30\n",
         "b.tape": "interface shard-store\n\ntimeout = 45\n",
-        "bad.tape": "interface shard-store\ntimeout = 30\ntimeout = 45\n"
+        "bad.tape": "interface shard-store\nthis is not a statement\n"
       },
       "argv": [
-        "sweep",
-        "bad.tape",
-        "missing.tape"
+        "compare",
+        "a.tape",
+        "bad.tape"
       ],
       "expect": {
         "code": 2,
         "stdout": "",
-        "stderr": "error: bad.tape is malformed, duplicate term name timeout at line 3\n",
+        "stderr": "error: bad.tape is malformed, line 2 matches no statement form, this is not a statement\n",
         "files": {
-          "a.tape": "interface shard-store\n\ntimeout = 30\n",
+          "bad.tape": "interface shard-store\nthis is not a statement\n",
           "b.tape": "interface shard-store\n\ntimeout = 45\n",
-          "bad.tape": "interface shard-store\ntimeout = 30\ntimeout = 45\n"
+          "a.tape": "interface shard-store\n\ntimeout = 30\n"
         }
       }
     },
     {
-      "name": "sweep-malformed-first-other",
+      "name": "compare-malformed-right-bad-identifier",
+      "source": "oracle",
+      "setup": {
+        "a.tape": "interface shard-store\n\ntimeout = 30\n",
+        "b.tape": "interface shard-store\n\ntimeout = 45\n",
+        "bad.tape": "interface shard-store\n9bad = v\n"
+      },
+      "argv": [
+        "compare",
+        "a.tape",
+        "bad.tape"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: bad.tape is malformed, line 2 names no valid identifier, 9bad\n",
+        "files": {
+          "bad.tape": "interface shard-store\n9bad = v\n",
+          "b.tape": "interface shard-store\n\ntimeout = 45\n",
+          "a.tape": "interface shard-store\n\ntimeout = 30\n"
+        }
+      }
+    },
+    {
+      "name": "compare-malformed-right-duplicate-operation",
       "source": "oracle",
       "setup": {
         "a.tape": "interface shard-store\n\ntimeout = 30\n",
@@ -2996,96 +3019,66 @@
         "bad.tape": "interface shard-store\noperation fetch = record\noperation fetch = receipt\n"
       },
       "argv": [
-        "sweep",
+        "compare",
         "a.tape",
-        "bad.tape",
-        "b.tape"
+        "bad.tape"
       ],
       "expect": {
         "code": 2,
         "stdout": "",
         "stderr": "error: bad.tape is malformed, duplicate operation name fetch at line 3\n",
         "files": {
-          "a.tape": "interface shard-store\n\ntimeout = 30\n",
+          "bad.tape": "interface shard-store\noperation fetch = record\noperation fetch = receipt\n",
           "b.tape": "interface shard-store\n\ntimeout = 45\n",
-          "bad.tape": "interface shard-store\noperation fetch = record\noperation fetch = receipt\n"
+          "a.tape": "interface shard-store\n\ntimeout = 30\n"
         }
       }
     },
     {
-      "name": "sweep-malformed-later-other-no-partial",
+      "name": "compare-malformed-right-duplicate-label",
       "source": "oracle",
       "setup": {
         "a.tape": "interface shard-store\n\ntimeout = 30\n",
         "b.tape": "interface shard-store\n\ntimeout = 45\n",
-        "bad.tape": "interface shard-store\ntimeout =\n"
+        "bad.tape": "interface shard-store\nlabel primary = node-a\nlabel primary = node-b\n"
       },
       "argv": [
-        "sweep",
+        "compare",
         "a.tape",
-        "b.tape",
         "bad.tape"
       ],
       "expect": {
         "code": 2,
         "stdout": "",
-        "stderr": "error: bad.tape is malformed, line 2 states an empty value for timeout\n",
+        "stderr": "error: bad.tape is malformed, duplicate label name primary at line 3\n",
         "files": {
-          "a.tape": "interface shard-store\n\ntimeout = 30\n",
+          "bad.tape": "interface shard-store\nlabel primary = node-a\nlabel primary = node-b\n",
           "b.tape": "interface shard-store\n\ntimeout = 45\n",
-          "bad.tape": "interface shard-store\ntimeout =\n"
+          "a.tape": "interface shard-store\n\ntimeout = 30\n"
         }
       }
     },
     {
-      "name": "sweep-refusals-first-in-pair-order",
+      "name": "compare-malformed-right-excludes-bad-identifier",
       "source": "oracle",
       "setup": {
         "a.tape": "interface shard-store\n\ntimeout = 30\n",
         "b.tape": "interface shard-store\n\ntimeout = 45\n",
-        "bad.tape": "interface shard-store\ntimeout = 30\ntimeout = 45\n",
-        "bad2.tape": "interface shard-store\ntimeout = 30\nexcludes = timeout\n"
+        "bad.tape": "interface shard-store\ntimeout = 30\nexcludes = 9bad\n"
       },
       "argv": [
-        "sweep",
+        "compare",
         "a.tape",
-        "bad.tape",
-        "bad2.tape"
+        "bad.tape"
       ],
       "expect": {
         "code": 2,
         "stdout": "",
-        "stderr": "error: bad.tape is malformed, duplicate term name timeout at line 3\n",
+        "stderr": "error: bad.tape is malformed, line 3 excludes line names no valid identifier\n",
         "files": {
-          "a.tape": "interface shard-store\n\ntimeout = 30\n",
+          "bad.tape": "interface shard-store\ntimeout = 30\nexcludes = 9bad\n",
           "b.tape": "interface shard-store\n\ntimeout = 45\n",
-          "bad.tape": "interface shard-store\ntimeout = 30\ntimeout = 45\n",
-          "bad2.tape": "interface shard-store\ntimeout = 30\nexcludes = timeout\n"
-        }
-      }
-    },
-    {
-      "name": "sweep-other-interface-refuses-whole",
-      "source": "oracle",
-      "setup": {
-        "a.tape": "interface shard-store\n\ntimeout = 30\n",
-        "b.tape": "interface shard-store\n\ntimeout = 45\n",
-        "c.tape": "interface shard-cache\ntimeout = 30\n"
-      },
-      "argv": [
-        "sweep",
-        "a.tape",
-        "b.tape",
-        "c.tape"
-      ],
-      "expect": {
-        "code": 2,
-        "stdout": "",
-        "stderr": "error: artifacts name different interfaces, a.tape names shard-store and c.tape names shard-cache\n",
-        "files": {
-          "a.tape": "interface shard-store\n\ntimeout = 30\n",
-          "b.tape": "interface shard-store\n\ntimeout = 45\n",
-          "c.tape": "interface shard-cache\ntimeout = 30\n"
+          "a.tape": "interface shard-store\n\ntimeout = 30\n"
         }
       }
     }
