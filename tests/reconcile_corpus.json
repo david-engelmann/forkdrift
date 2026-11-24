@@ -7600,6 +7600,162 @@
           "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store latency term-value\n  left (run-c.tape) latency = 5\n  right (run-b.tape) latency = 9\n"
         }
       }
+    },
+    {
+      "name": "stage-record-one-source-both-sides",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-a.tape) timeout = 45\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for timeout of interface shard-store at line 1 names the one source run-a.tape on both sides\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-a.tape) timeout = 45\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-excluded-wrong-line",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-b.tape) operation other = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode at line 1 quotes a line that is neither an excludes line naming legacy-mode nor a defining line for legacy-mode, operation other = ack\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-b.tape) operation other = ack\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-excluded-no-excludes",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) legacy-mode = on\n  right (run-b.tape) legacy-mode = off\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode at line 1 must quote exactly one excludes line naming legacy-mode\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) legacy-mode = on\n  right (run-b.tape) legacy-mode = off\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-excluded-same-kind",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-b.tape) legacy-mode = on\n  right (run-b.tape) legacy-mode = off\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode at line 1 quotes two defining lines of the one form for legacy-mode\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-b.tape) legacy-mode = on\n  right (run-b.tape) legacy-mode = off\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-excluded-two-sources",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) legacy-mode = on\n  right (run-b.tape) excludes = legacy-mode\n  left (run-c.tape) operation legacy-mode = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode at line 1 quotes defining lines for legacy-mode from two different sources\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) legacy-mode = on\n  right (run-b.tape) excludes = legacy-mode\n  left (run-c.tape) operation legacy-mode = ack\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-excluded-one-source",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-a.tape) legacy-mode = on\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode at line 1 quotes the excludes line and the defining lines for legacy-mode from the one source, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-a.tape) legacy-mode = on\n"
+        }
+      }
     }
   ]
 }
