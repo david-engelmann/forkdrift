@@ -8380,6 +8380,162 @@
           "rec.txt": "divergence shard-store store result-type\n  left (run-a.tape) operation store = ack\n  right (run-b.tape) other = ack\n"
         }
       }
+    },
+    {
+      "name": "stage-record-term-wrong-kind-name-second-row",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) operation latency = 30\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for timeout at line 1 quotes a line that is not a term line for timeout, operation latency = 30\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) operation latency = 30\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-result-wrong-line-kind-name-second-row",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store store result-type\n  left (run-a.tape) operation store = ack\n  right (run-b.tape) other = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for store at line 1 quotes a line that is not a operation line for store, other = ack\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store store result-type\n  left (run-a.tape) operation store = ack\n  right (run-b.tape) other = ack\n"
+        }
+      }
+    },
+    {
+      "name": "record-result-wrong-line-formless-second-row",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store store result-type\n  left (run-a.tape) operation store = ack\n  right (run-b.tape) store the ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for store at line 1 quotes a line that is not a operation line for store, store the ack\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store store result-type\n  left (run-a.tape) operation store = ack\n  right (run-b.tape) store the ack\n"
+        }
+      }
+    },
+    {
+      "name": "record-term-excludes-line-second-row",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) excludes = timeout\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for timeout at line 1 quotes a line that is not a term line for timeout, excludes = timeout\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) excludes = timeout\n"
+        }
+      }
+    },
+    {
+      "name": "record-result-excludes-line-second-row",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store store result-type\n  left (run-a.tape) operation store = ack\n  right (run-b.tape) excludes = store\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for store at line 1 quotes a line that is not a operation line for store, excludes = store\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store store result-type\n  left (run-a.tape) operation store = ack\n  right (run-b.tape) excludes = store\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-result-excludes-line-second-row",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store store result-type\n  left (run-a.tape) operation store = ack\n  right (run-b.tape) excludes = store\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for store at line 1 quotes a line that is not a operation line for store, excludes = store\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store store result-type\n  left (run-a.tape) operation store = ack\n  right (run-b.tape) excludes = store\n"
+        }
+      }
     }
   ]
 }
