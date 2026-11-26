@@ -99,7 +99,7 @@ fn readme_status_reports_rounds() {
     }
     assert_eq!(
         counts,
-        ["61"],
+        ["62"],
         "README status must report exactly one closed round count"
     );
 }
