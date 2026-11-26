@@ -10460,6 +10460,526 @@
           "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n  right (run-c.tape) interface shard-store\n"
         }
       }
+    },
+    {
+      "name": "record-row-source-third",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency term-value\n  left (run-c.tape) latency = 5\n  right (run-b.tape) latency = 9\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for latency of interface shard-store at line 7 names source run-c.tape on the left, which is not the left source of the record, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency term-value\n  left (run-c.tape) latency = 5\n  right (run-b.tape) latency = 9\n"
+        }
+      }
+    },
+    {
+      "name": "record-row-source-third-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency term-value\n  left (run-a.tape) latency = 5\n  right (run-c.tape) latency = 9\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for latency of interface shard-store at line 7 names source run-c.tape on the right, which is not the right source of the record, run-b.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency term-value\n  left (run-a.tape) latency = 5\n  right (run-c.tape) latency = 9\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-row-source-third",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency term-value\n  left (run-c.tape) latency = 5\n  right (run-b.tape) latency = 9\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for latency of interface shard-store at line 7 names source run-c.tape on the left, which is not the left source of the record, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency term-value\n  left (run-c.tape) latency = 5\n  right (run-b.tape) latency = 9\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-row-source-third-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency term-value\n  left (run-a.tape) latency = 5\n  right (run-c.tape) latency = 9\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for latency of interface shard-store at line 7 names source run-c.tape on the right, which is not the right source of the record, run-b.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency term-value\n  left (run-a.tape) latency = 5\n  right (run-c.tape) latency = 9\n"
+        }
+      }
+    },
+    {
+      "name": "record-result-row-source-third",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency result-type\n  left (run-c.tape) operation latency = ack\n  right (run-b.tape) operation latency = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for latency of interface shard-store at line 7 names source run-c.tape on the left, which is not the left source of the record, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency result-type\n  left (run-c.tape) operation latency = ack\n  right (run-b.tape) operation latency = ack\n"
+        }
+      }
+    },
+    {
+      "name": "record-result-row-source-third-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency result-type\n  left (run-a.tape) operation latency = ack\n  right (run-c.tape) operation latency = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for latency of interface shard-store at line 7 names source run-c.tape on the right, which is not the right source of the record, run-b.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency result-type\n  left (run-a.tape) operation latency = ack\n  right (run-c.tape) operation latency = ack\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-result-row-source-third",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency result-type\n  left (run-c.tape) operation latency = ack\n  right (run-b.tape) operation latency = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for latency of interface shard-store at line 7 names source run-c.tape on the left, which is not the left source of the record, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency result-type\n  left (run-c.tape) operation latency = ack\n  right (run-b.tape) operation latency = ack\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-result-row-source-third-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency result-type\n  left (run-a.tape) operation latency = ack\n  right (run-c.tape) operation latency = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for latency of interface shard-store at line 7 names source run-c.tape on the right, which is not the right source of the record, run-b.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store latency result-type\n  left (run-a.tape) operation latency = ack\n  right (run-c.tape) operation latency = ack\n"
+        }
+      }
+    },
+    {
+      "name": "record-excluded-row-source-third",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store legacy-mode excluded-but-defined\n  left (run-c.tape) legacy-mode = on\n  right (run-b.tape) excludes = legacy-mode\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode of interface shard-store at line 7 names source run-c.tape on the left, which is not the left source of the record, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store legacy-mode excluded-but-defined\n  left (run-c.tape) legacy-mode = on\n  right (run-b.tape) excludes = legacy-mode\n"
+        }
+      }
+    },
+    {
+      "name": "record-excluded-row-source-third-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-c.tape) legacy-mode = on\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode of interface shard-store at line 7 names source run-c.tape on the right, which is not the right source of the record, run-b.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-c.tape) legacy-mode = on\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-excluded-row-source-third",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store legacy-mode excluded-but-defined\n  left (run-c.tape) legacy-mode = on\n  right (run-b.tape) excludes = legacy-mode\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode of interface shard-store at line 7 names source run-c.tape on the left, which is not the left source of the record, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store legacy-mode excluded-but-defined\n  left (run-c.tape) legacy-mode = on\n  right (run-b.tape) excludes = legacy-mode\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-excluded-row-source-third-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-c.tape) legacy-mode = on\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode of interface shard-store at line 7 names source run-c.tape on the right, which is not the right source of the record, run-b.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) excludes = legacy-mode\n  right (run-c.tape) legacy-mode = on\n"
+        }
+      }
+    },
+    {
+      "name": "record-presence-row-source-third",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store cache-ttl presence\n  left (run-c.tape) cache-ttl = 300\n  right (run-b.tape) interface shard-store\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for cache-ttl of interface shard-store at line 7 names source run-c.tape on the left, which is not the left source of the record, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store cache-ttl presence\n  left (run-c.tape) cache-ttl = 300\n  right (run-b.tape) interface shard-store\n"
+        }
+      }
+    },
+    {
+      "name": "record-presence-row-source-third-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n  right (run-c.tape) interface shard-store\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for cache-ttl of interface shard-store at line 7 names source run-c.tape on the right, which is not the right source of the record, run-b.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n  right (run-c.tape) interface shard-store\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-presence-row-source-third",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store cache-ttl presence\n  left (run-c.tape) cache-ttl = 300\n  right (run-b.tape) interface shard-store\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for cache-ttl of interface shard-store at line 7 names source run-c.tape on the left, which is not the left source of the record, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store cache-ttl presence\n  left (run-c.tape) cache-ttl = 300\n  right (run-b.tape) interface shard-store\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-presence-row-source-third-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n  right (run-c.tape) interface shard-store\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for cache-ttl of interface shard-store at line 7 names source run-c.tape on the right, which is not the right source of the record, run-b.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store timeout term-value\n  left (run-a.tape) timeout = 30\n  right (run-b.tape) timeout = 45\ndivergence shard-store gamma term-value\n  left (run-a.tape) gamma = 30\n  right (run-b.tape) gamma = 45\ndivergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n  right (run-c.tape) interface shard-store\n"
+        }
+      }
+    },
+    {
+      "name": "record-excluded-row-source-first",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) legacy-mode = on\n  left (run-b.tape) excludes = legacy-mode\n  right (run-a.tape) operation legacy-mode = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode of interface shard-store at line 1 names source run-b.tape on the left, which is not the left source of the record, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) legacy-mode = on\n  left (run-b.tape) excludes = legacy-mode\n  right (run-a.tape) operation legacy-mode = ack\n"
+        }
+      }
+    },
+    {
+      "name": "record-excluded-row-source-first-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  right (run-b.tape) legacy-mode = on\n  right (run-a.tape) excludes = legacy-mode\n  left (run-b.tape) operation legacy-mode = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode of interface shard-store at line 1 names source run-a.tape on the right, which is not the right source of the record, run-b.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  right (run-b.tape) legacy-mode = on\n  right (run-a.tape) excludes = legacy-mode\n  left (run-b.tape) operation legacy-mode = ack\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-excluded-row-source-first",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) legacy-mode = on\n  left (run-b.tape) excludes = legacy-mode\n  right (run-a.tape) operation legacy-mode = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode of interface shard-store at line 1 names source run-b.tape on the left, which is not the left source of the record, run-a.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  left (run-a.tape) legacy-mode = on\n  left (run-b.tape) excludes = legacy-mode\n  right (run-a.tape) operation legacy-mode = ack\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-excluded-row-source-first-right",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  right (run-b.tape) legacy-mode = on\n  right (run-a.tape) excludes = legacy-mode\n  left (run-b.tape) operation legacy-mode = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for legacy-mode of interface shard-store at line 1 names source run-a.tape on the right, which is not the right source of the record, run-b.tape\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  right (run-b.tape) legacy-mode = on\n  right (run-a.tape) excludes = legacy-mode\n  left (run-b.tape) operation legacy-mode = ack\n"
+        }
+      }
     }
   ]
 }
