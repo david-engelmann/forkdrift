@@ -11188,6 +11188,58 @@
           "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) interface shard-store\n  right (run-b.tape) operation cache-ttl = ack\n  right (run-b.tape) cache-ttl = 300\n"
         }
       }
+    },
+    {
+      "name": "record-presence-both-sides-operation",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) operation cache-ttl = ack\n  right (run-b.tape) operation cache-ttl = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "handback",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for cache-ttl at line 1 quotes a operation line for cache-ttl from both sides, and a presence block quotes each form from one side only\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) operation cache-ttl = ack\n  right (run-b.tape) operation cache-ttl = ack\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-presence-both-sides-operation",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) operation cache-ttl = ack\n  right (run-b.tape) operation cache-ttl = ack\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for cache-ttl at line 1 quotes a operation line for cache-ttl from both sides, and a presence block quotes each form from one side only\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) operation cache-ttl = ack\n  right (run-b.tape) operation cache-ttl = ack\n"
+        }
+      }
     }
   ]
 }
