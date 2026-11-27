@@ -10980,6 +10980,58 @@
           "rec.txt": "divergence shard-store legacy-mode excluded-but-defined\n  right (run-b.tape) legacy-mode = on\n  right (run-a.tape) excludes = legacy-mode\n  left (run-b.tape) operation legacy-mode = ack\n"
         }
       }
+    },
+    {
+      "name": "stage-record-presence-no-rows",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store cache-ttl presence\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for cache-ttl at line 1 must quote one left row and one right row and at most one further row\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store cache-ttl presence\n"
+        }
+      }
+    },
+    {
+      "name": "stage-record-presence-one-row",
+      "source": "oracle",
+      "setup": {
+        "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+        "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+        "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n"
+      },
+      "argv": [
+        "reconcile",
+        "stage",
+        "L.state",
+        "R.state",
+        "rec.txt"
+      ],
+      "expect": {
+        "code": 2,
+        "stdout": "",
+        "stderr": "error: rec.txt is malformed, block for cache-ttl at line 1 must quote one left row and one right row and at most one further row\n",
+        "files": {
+          "L.state": "interface shard-store\nauthor engineer-a\n\ntimeout = 30\noperation store = ack\n",
+          "R.state": "interface shard-store\nauthor engineer-b\n\ntimeout = 45\noperation store = ack\n",
+          "rec.txt": "divergence shard-store cache-ttl presence\n  left (run-a.tape) cache-ttl = 300\n"
+        }
+      }
     }
   ]
 }
